@@ -170,3 +170,38 @@ def plot_profiles(unit409,ndays,titlestr):
     fname = titlestr+'_profiles'
     save_figure(fig, fname)
     
+
+def dec2deg(dec1):
+    import math
+    if dec1==0:
+        deg1 = 0
+        mindec = 0
+        degstr = str(deg1)+u"\N{DEGREE SIGN}"
+    else:
+        if dec1<0:
+            dec1 = abs(dec1)
+            dirstr = 'W/S'
+        elif dec1>0:
+            dirstr = 'E/N'
+
+        deg1 = math.floor(dec1)
+            
+        mindec = round(100*(dec1-deg1)*60)/100
+        
+        if mindec==60:
+            deg1 += deg1
+            mindec = 0
+            
+        if mindec==0:
+            degstr = str(deg1)+u"\N{DEGREE SIGN}"+dirstr
+        else:
+            degstr = str(deg1)+u"\N{DEGREE SIGN}"+str(mindec)+dirstr
+            
+    return degstr, deg1, mindec
+
+
+def deg2dec(deg1, mindec):
+    dec1 = deg1 + mindec/60
+    
+    return dec1
+
