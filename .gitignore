@@ -2,3 +2,5 @@
 .ipynb_checkpoints
 old
 api_outputs
+01-data/01-raw
+01-data/02-intermediate
