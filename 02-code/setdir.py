@@ -3,8 +3,7 @@ import datetime
 
 def create_figdir():
     #figdir = '../results/figfiles/yyyy-mm/';
-    today = datetime.datetime.now()
-    yyyymm = str(today.year)+'-'+str(today.month)
+    yyyymm = datetime.datetime.now().strftime('%Y-%m')
     figdir = os.path.join('..','03-results','figures',yyyymm)
     if not os.path.isdir(figdir):
         os.makedirs(figdir, exist_ok=True)
