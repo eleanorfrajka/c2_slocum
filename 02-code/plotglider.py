@@ -1,6 +1,7 @@
 from scipy.io import loadmat # to load bathymetry
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 from setdir import *
 import seaborn as sns
 
@@ -44,10 +45,10 @@ def map_tracks_pos(bathylon,bathylat,bathy,unit409,unit398):
     latname = 'latitude'
     ax1.plot(unit398[lonname], unit398[latname], color='r')
     ax1.plot(unit409[lonname], unit409[latname], color='b')
-    plt.xlabel('Longitude')
-    plt.ylabel("Latitude")
+    ax1.set_xlabel('Longitude')
+    ax1.set_ylabel("Latitude")
     plt.legend(['unit_398','unit_409'])
-    sns.set(style='darkgrid')
+#    sns.set(style='whitegrid')
 
     xsize = 5
     ysize = compute_ysize(xsize, lonlim, latlim)
@@ -75,10 +76,10 @@ def map_tracks(bathylon, bathylat, bathy, unit409, unit398):
     latname = 'm_gps_lat'
     ax1.plot(unit398[lonname], unit398[latname], color='r')
     ax1.plot(unit409[lonname], unit409[latname], color='b')
-    plt.xlabel="Longitude"
-    plt.ylabel="Latitude"
+    ax1.set_xlabel("Longitude")
+    ax1.set_ylabel("Latitude")
     plt.legend(['unit_398','unit_409'])
-    sns.set(style='darkgrid')
+#    sns.set(style='white')
 
 
 
@@ -95,13 +96,28 @@ def plot_pressure(unit409,titlestr):
     # Plot pressure against time
     xsize=10
     ysize=3
-    unit409.plot(x='time', y='pressure_dbar', ylabel='pressure(dbar)', title=titlestr)
-    plt.legend().remove()
+    timename = 'time'
+    presname = 'pressure_dbar'
+
+    # Plot the time series of pressure
+    ax1 = plt.subplot(1,1,1)
+    ax1.plot(unit409[timename], unit409[presname])
+    ax1.set_ylabel('Pressure [dbar]')
+    ax1.set_title(titlestr)
     plt.gca().invert_yaxis()
     fig = plt.gcf()
     fig.set_size_inches(xsize,ysize)
 
+    # Text in the x axis will be displayed in 'YYYY-mm' format.
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%b-%d'))
+    # Rotates and right-aligns the x labels so they don't crowd each other.
+    for label in ax1.get_xticklabels(which='major'):
+        label.set(rotation=30, horizontalalignment='right')
+
     plt.show()
+    
+
+    # Save the figure
     fname = titlestr+'_pseries'
     save_figure(fig, fname)
 
@@ -111,25 +127,31 @@ def plot_pressure(unit409,titlestr):
 def plot_tseries(unit409,ndays,titlestr):
     axes = plt.subplots(nrows=3, ncols=1,figsize=(10,10))
 
-    maxtime = max_time = unit409.time.max()
-    data_lastdays = unit409[unit409.time>=(max_time+datetime.timedelta(days=-ndays))].copy()
+    timename = 'time'
+    presname = 'pressure_dbar'
+    salname = 'derived_salinity'
+    tempname = 'sci_water_temp'
+
+    max_time = unit409.time.max().values
+    dt1 = np.timedelta64(-ndays, 'D')
+    ds1 = unit409.where(unit409[timename]>=(max_time+dt1))
+    
     
     # Pressure
     ax1 = plt.subplot(3,1,1)
-    data_lastdays.plot(y='pressure_dbar',x='time', 
-                          ax=ax1, ylabel='Pressure (dbar)',xlabel='',
-                          title=titlestr)
+    ax1.plot(ds1[timename], ds1[presname])
+    ax1.set_ylabel('Pressure [dbar]')
+    ax1.set_xlabel('')
+    ax1.set_title(titlestr)
     ax1.xaxis.set_ticklabels([])
     ax1.invert_yaxis()
-    ax1.get_legend().remove()
 
     # Temperature
     ax2 = plt.subplot(3,1,2)
-    data_lastdays.plot(x='time',y='sci_water_temp',
-                  ax=ax2,
-                  xlabel='',ylabel='Temperature')
+    ax2.plot(ds1[timename], ds1[tempname])
+    ax2.set_ylabel('Temperature [deg C]')
+    ax2.set_xlabel('')
     ax2.xaxis.set_ticklabels([])
-    ax2.get_legend().remove()
 
     
     # Salnity
@@ -137,10 +159,8 @@ def plot_tseries(unit409,ndays,titlestr):
     #data_lastdays['derived_salinity'] = data_lastdays['derived_salinity'].replace(0,np.nan)
     #    data_lastdays['derived_salinity'].where(data_lastdays['derived_salinity'] < 0)
     ax3 = plt.subplot(3,1,3)
-    data_lastdays.plot(x='time',y='derived_salinity',
-                  ax=ax3,
-                  ylabel='Salinity')
-    ax3.get_legend().remove()
+    ax3.plot(ds1[timename], ds1[salname])
+    ax3.set_ylabel('Salinity')
     
     # Save
     fig = plt.gcf()
@@ -148,29 +168,37 @@ def plot_tseries(unit409,ndays,titlestr):
     save_figure(fig, fname)
     
 def plot_profiles(unit409,ndays,titlestr):
+    # Variable names (could be passed as a dictionary)
+    timename = 'time'
+    presname = 'pressure_dbar'
+    salname = 'derived_salinity'
+    tempname = 'sci_water_temp'
+    
     # Most recent profiles
-    maxtime = max_time = unit409.time.max()
-    data_lastdays = unit409[unit409.time>=(max_time+datetime.timedelta(days=-ndays))].copy()
+    max_time = unit409.time.max().values
+    dt1 = np.timedelta64(-ndays, 'D')
+    ds1 = unit409.where(unit409[timename]>=(max_time+dt1))
+
+    
     # Maximum pressure for plot limits
-    maxp = data_lastdays.pressure_dbar.max()
+    maxp = ds1[presname].max()
                   
     # Profile plot of recent data
     axes = plt.subplots(nrows=1, ncols=2,figsize=(10,10))
     ax1 = plt.subplot(1,2,1)
-    data_lastdays.plot(y='pressure_dbar',x='derived_salinity', 
-                          ax=ax1,
-                         ylabel='Pressure (dbar)',xlabel='Salinity',
-                         title=titlestr)
-    ax1.legend().remove()
+    ax1.plot(ds1[salname], ds1[presname])
+    ax1.set_ylabel('Pressure [dbar]')
+    ax1.set_xlabel('Salinity')
+    ax1.set_title(titlestr)
     ax1.invert_yaxis()
     ax1.set_ylim([maxp,0])
     forceAspect(ax1,ratio=2)
+    
     ax2 = plt.subplot(1,2,2)
-    data_lastdays.plot(y='pressure_dbar',x='sci_water_temp',
-                         ax=ax2,
-                         xlabel='Temperature',ylabel='')
-    ax2.legend().remove()
-
+    ax2.plot(ds1[tempname], ds1[presname])
+    ax2.set_xlabel('Temperature [deg C]')
+    ax2.set_ylabel('')
+    
     ax2.invert_yaxis()
     ax2.set_ylim([maxp,0])
     forceAspect(ax2,ratio=2)
