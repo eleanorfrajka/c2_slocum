@@ -2,6 +2,7 @@ from scipy.io import loadmat # to load bathymetry
 import numpy as np
 import matplotlib.pyplot as plt
 from setdir import *
+import seaborn as sns
 
 font = {'family' : 'sans-serif',
         'weight' : 'normal',
@@ -39,10 +40,14 @@ def map_tracks_pos(bathylon,bathylat,bathy,unit409,unit398):
     ax1.set_xlim(lonlim)
     fig = plt.gcf()
 
-    unit398.plot(x='longitude',y='latitude', color='r', ax=ax1)
-    unit409.plot(x='longitude',y='latitude', color='b', ax=ax1, xlabel='Longitude', ylabel='Latitude')
+    lonname = 'longitude'
+    latname = 'latitude'
+    ax1.plot(unit398[lonname], unit398[latname], color='r')
+    ax1.plot(unit409[lonname], unit409[latname], color='b')
+    plt.xlabel('Longitude')
+    plt.ylabel("Latitude")
     plt.legend(['unit_398','unit_409'])
-
+    sns.set(style='darkgrid')
 
     xsize = 5
     ysize = compute_ysize(xsize, lonlim, latlim)
@@ -53,7 +58,7 @@ def map_tracks_pos(bathylon,bathylat,bathy,unit409,unit398):
     save_figure(fig,'map_units_pos')
     
 # Plot maps (needs two glider tracks)
-def map_tracks(bathylon,bathylat,bathy,unit409,unit398):
+def map_tracks(bathylon, bathylat, bathy, unit409, unit398):
 
     # Choose axis limits
     latlim = [52, 67]
@@ -66,9 +71,15 @@ def map_tracks(bathylon,bathylat,bathy,unit409,unit398):
     ax1.set_xlim(lonlim)
     fig = plt.gcf()
 
-    unit398.plot(x='m_gps_lon',y='m_gps_lat', color='r', ax=ax1)
-    unit409.plot(x='m_gps_lon',y='m_gps_lat', color='b', ax=ax1, xlabel='Longitude', ylabel='Latitude')
+    lonname = 'm_gps_lon'
+    latname = 'm_gps_lat'
+    ax1.plot(unit398[lonname], unit398[latname], color='r')
+    ax1.plot(unit409[lonname], unit409[latname], color='b')
+    plt.xlabel="Longitude"
+    plt.ylabel="Latitude"
     plt.legend(['unit_398','unit_409'])
+    sns.set(style='darkgrid')
+
 
 
     xsize = 5
