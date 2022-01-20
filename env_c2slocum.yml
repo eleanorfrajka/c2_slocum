@@ -40,6 +40,7 @@ dependencies:
   - fonttools=4.28.5=py39h89e85a6_0
   - freetype=2.10.4=h4cff582_1
   - fsspec=2022.1.0=pyhd8ed1ab_0
+  - gsw=3.4.0=py39hc89836e_2
   - h5netcdf=0.13.0=pyhd8ed1ab_0
   - h5py=3.6.0=nompi_py39hbc6cb89_100
   - hdf4=4.2.15=hefd3b78_3
@@ -50,6 +51,7 @@ dependencies:
   - importlib_metadata=4.10.1=hd8ed1ab_0
   - ipykernel=6.7.0=py39h71a6800_0
   - ipython=8.0.0=py39h6e9494a_0
+  - ipython_genutils=0.2.0=pyhd3eb1b0_1
   - jedi=0.18.1=py39h6e9494a_0
   - jinja2=3.0.3=pyhd8ed1ab_0
   - jpeg=9d=hbcb3906_0
@@ -153,4 +155,4 @@ dependencies:
   - zipp=3.7.0=pyhd8ed1ab_0
   - zlib=1.2.11=h4dc903c_4
   - zstd=1.4.9=h582d3a0_0
-prefix: /opt/miniconda3/envs/env_c2slocum
+prefix: /Users/loueme/anaconda3/envs/env_c2slocum
