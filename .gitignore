@@ -6,3 +6,5 @@ api_outputs
 01-data/02-intermediate
 __pycache__
 myToken.txt
+env_miniconda.yml
+pkglist.txt
