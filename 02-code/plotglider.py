@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from setdir import *
 import seaborn as sns
+import xarray as xr
 
 font = {'family' : 'sans-serif',
         'weight' : 'normal',
@@ -244,3 +245,77 @@ def deg2dec(deg1, mindec):
     
     return dec1
 
+
+
+def dive_index(unit):
+    """ Define Profile index. 
+    Use initial vertical sampling dp=5-10dbar loaded by Iridium. Check later with higher vertical sampling.
+    Parameters
+    ----------
+    unit : xarray.Dataset for each glider.
+    Returns
+    -------
+    unit : xarray.Dataset
+           Profile index in unit['profile_index'] with .0 for dives and .5 for climbs.
+           Localise dives indices (idx_d) and climbs (idx_c).
+    """
+
+    pres=unit['pressure_dbar'].values.copy()
+    unit['profile_index'] = xr.DataArray(np.full(pres.shape[0],np.nan), dims=['time'])
+    # remove surface values (above .5 m)
+    pres[ np.where(pres<0.5)[0] ] = np.nan
+    # localise ~nan pressure
+    pres_idx=np.where(~np.isnan(pres))[0]
+    
+    # 10-20 shallow points have two identical pressure measurements, potentially separated by nans. 
+    # Remove latest measurement, otherwise, inflection points are missed.
+    idx_rm=np.where(np.diff(pres[pres_idx])==0)[0]
+    pres[pres_idx[idx_rm]]=np.nan
+    # relocalise ~nan pressure without identical pressure measurements.
+    pres_idx=np.where(~np.isnan(pres))[0]
+    
+    # Initial index based on 1st profile (398:dive or 409:climb).
+    init_index=[1 if np.diff(pres[pres_idx[1:3]])>0 else 1.5][0]
+    for i in range(pres_idx[1],pres.shape[0]-1):
+        # Localise inflection point for 3 valid depths: i.e. sign((p_{z+1}-p_{z})*(p_{z}-p_{z-1}))<0
+        if ~np.isnan(pres[i]) :
+            idxp=np.where(pres_idx==i)[0][0]
+            p0=pres_idx[idxp-1]
+            p1=pres_idx[idxp+1]
+            if np.sign((pres[p1]-pres[i])*(pres[i]-pres[p0])) == -1:
+                init_index+=.5
+            unit['profile_index'][i]=init_index
+            
+    idx_c = np.where( unit['profile_index'] % 1 == .5)[0] # climb indices
+    idx_d = np.where( unit['profile_index'] % 1 == 0)[0] # dive indices
+    
+    return unit, idx_d, idx_c
+
+
+def plot_dp(u1,i1,u2,i2,idx_d,idx_c):
+    """ Plot to check that profile_index from dive_index() are correct: 
+    Every dive (dp>0) should be blue and climb (dp<0) red. 
+    Parameters
+    ----------
+    u1, u2 : xarray.Dataset for each glider.
+    idx1, idx2 : individual glider index.
+    idx_d, idx_c: dive/climb indices, output from dive_index().
+    """
+    
+    ax = plt.subplots(nrows=2, ncols=1, figsize=(14,6))
+    ax1 = plt.subplot(2,1,1)
+    ax1.plot(u1['time'][idx_d[i1]],np.diff(u1['pressure_dbar'])[idx_d[i1]],'.b')
+    ax1.plot(u1['time'][idx_c[i1]],np.diff(u1['pressure_dbar'])[idx_c[i1]],'.r')
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter("%d-%b"))
+    plt.grid() ; plt.ylabel(i1,fontweight='bold') ;
+    plt.title('dp (dbar)'+'\n'+'Check: every dive (dp>0) should be blue and climb (dp<0) red. ',fontweight='bold')
+
+    ax2 = plt.subplot(2,1,2)
+    ax2.plot(u2['time'][idx_d[i2]],np.diff(u2['pressure_dbar'])[idx_d[i2]],'.b')
+    ax2.plot(u2['time'][idx_c[i2]],np.diff(u2['pressure_dbar'])[idx_c[i2]],'.r')
+    ax2.set_ylim([-15,15]) ;
+    ax2.xaxis.set_major_formatter(mdates.DateFormatter("%d-%b"))
+    plt.grid() ; plt.ylabel(i2,fontweight='bold') ;
+    
+    
+    
