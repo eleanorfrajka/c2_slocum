@@ -318,4 +318,95 @@ def plot_dp(u1,i1,u2,i2,idx_d,idx_c):
     plt.grid() ; plt.ylabel(i2,fontweight='bold') ;
     
     
+def bin_dp(u1, dp):
+    """ Bin profile data from glider into coarse bins for quick plotting:
+    default of dp=10m
+    Parameters
+    ----------
+    u1: xarray.Dataset for a glider
+    dp: size of pressure bin, eg. gridding onto a 10-m bin
+    """
     
+    # Not super happy about the variable names.  Would rather not hard-code them 
+    # in case we come up with better names later. - EFW
+    presname = 'pressure_dbar'
+    idxname = 'profile_index'
+    
+    pres = u1[presname].values
+    prof_idx = u1[idxname].values
+    
+    # ISn't using the dp input yet - EFW
+    bins10m = np.linspace(0,1000,101)
+    pres10m = np.linspace(5,995,100)
+
+    divenum_vec = np.unique(u1[idxname].values)
+    divenum_vec[~np.isnan(divenum_vec)]
+
+    tempname = 'sci_water_temp'
+    condname = 'sci_water_cond'
+    oxyname = 'sci_oxy4_oxygen'
+    salname = 'derived_salinity'
+    densname = 'derived_potential_density'
+    ptmpname = 'derived_potential_temperature'
+    latname = 'm_gps_lat'
+    lonname = 'm_gps_lon'
+    
+    counter = 0
+    for i in divenum_vec:
+        # Subselect the xarray dataset for the dive or climb indices only
+        u11 = u1.where(u1[idxname]==i,drop=True)
+
+        # Calculate the median of values within the bin
+        ddive = u11.groupby_bins(presname,bins10m).median()
+
+        # Asign dimensions
+        temp = ddive[tempname].values
+        cond = ddive[condname].values
+        oxy4 = ddive[oxyname].values
+        salin = ddive[salname].values
+        pden = ddive[densname].values
+        ptemp = ddive[ptmpname].values
+        lat = ddive[latname].values
+        lon = ddive[lonname].values
+
+        # Reshape
+        temp = temp[np.newaxis, :]
+        lat = lat[np.newaxis, :]
+        lon = lon[np.newaxis, :]
+        cond = cond[np.newaxis, :]
+        oxy4 = oxy4[np.newaxis, :]
+        salin = salin[np.newaxis, :]
+        pden = pden[np.newaxis, :]
+        ptemp = ptemp[np.newaxis, :]
+
+        mycoords = dict(
+            divenum = (["divenum"], [i]),
+            pressure = (["pressure"], pres10m),
+        )
+
+
+        myvars = dict(
+            lat = (['divenum', 'pressure'], lat),
+            lon = (['divenum', 'pressure'], lon),
+            cond = (['divenum', 'pressure'], cond),
+            temp = (['divenum', 'pressure'], temp),
+            oxy4 = (['divenum', 'pressure'], oxy4),
+            salin = (['divenum', 'pressure'], salin),
+            pden = (['divenum', 'pressure'], pden),
+            ptemp = (['divenum', 'pressure'], ptemp))
+
+        myattrs = dict(
+            unit = 'unit409',
+            creator_name = 'Eleanor Frajka-Williams',
+        )
+
+        blank_new = xr.Dataset(data_vars=myvars, coords=mycoords, attrs=myattrs)
+
+        if counter==0:
+            blank_full = blank_new
+            counter += 1
+        else:
+            blank_full = blank_full.combine_first(blank_new)
+            counter += 1
+            
+        return blank_full
