@@ -435,11 +435,37 @@ def plot_sxn(ds1, varlist):
         elif varname=='sci_oxy4_oxygen':
             levels = [350, 360, 370, 380, 390, 400, 410, 420]
             cmapstr = 'BrBG'
-            
-            
-        data1.plot.pcolormesh(ax=axes[counter], x='divenum', y='pressure',
-                           ylim=[1000, 0], yincrease=False,
-                           add_labels=True, levels=levels, cmap=cmapstr)
+        elif (varname=='sci_flbbcd_chlor_units') | (varname=='sci_bb2flsv9_chl_scaled'):
+            levels = [0, .05, .1, .15, .2]
+            cmapstr='YlGn'
+        elif varname=='sci_flbbcd_cdom_units':
+            levels = [-.2, 0, .1, .2, .5]
+            levels = [x /1000 for x in levels]
+            cmapstr = 'YlOrRd'
+        elif varname=='sci_flbbcd_bb_units':
+            levels = [1, 1.5, 2, 2.5, 3 , 5]
+            levels = [x / 10000 for x in levels]
+            cmapstr ='Reds'
+        elif (varname=='sci_bb2flsv9_b532_scaled'):
+            levels = [0, .2, .5, .7, 1]
+            levels = [x / 1000 for x in levels]
+            cmapstr = 'Blues'
+
+        elif (varname=='sci_bb2flsv9_b700_scaled'):
+            levels = [0, .5, 1, 1.5, 2, 2.5, 3]
+            levels = [x/1000 for x in levels]
+            cmapstr='Reds'
+        else:
+            levels = []
+
+        if len(levels)>2: 
+            data1.plot.pcolormesh(ax=axes[counter], x='divenum', y='pressure',
+                               ylim=[1000, 0], yincrease=False,
+                               add_labels=True, levels=levels, cmap=cmapstr)
+        else:
+            data1.plot.pcolormesh(ax=axes[counter], x='divenum', y='pressure',
+                               ylim=[1000, 0], yincrease=False,
+                               add_labels=True)
     
         tstr = ds1.attrs['unit']
         axes[0].set_title(tstr)
