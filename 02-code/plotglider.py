@@ -276,7 +276,7 @@ def dive_index(unit):
     
     # Initial index based on 1st profile (398:dive or 409:climb).
     init_index=[1 if np.diff(pres[pres_idx[1:3]])>0 else 1.5][0]
-    for i in range(pres_idx[1],pres.shape[0]-1):
+    for i in range(pres_idx[1],pres_idx[-2]):
         # Localise inflection point for 3 valid depths: i.e. sign((p_{z+1}-p_{z})*(p_{z}-p_{z-1}))<0
         if ~np.isnan(pres[i]) :
             idxp=np.where(pres_idx==i)[0][0]
@@ -307,6 +307,7 @@ def plot_dp(u1,i1,u2,i2,idx_d,idx_c):
     ax1.plot(u1['time'][idx_d[i1]],np.diff(u1['pressure_dbar'])[idx_d[i1]],'.b')
     ax1.plot(u1['time'][idx_c[i1]],np.diff(u1['pressure_dbar'])[idx_c[i1]],'.r')
     ax1.xaxis.set_major_formatter(mdates.DateFormatter("%d-%b"))
+    ax1.set_ylim([-15,15]) ;
     plt.grid() ; plt.ylabel(i1,fontweight='bold') ;
     plt.title('dp (dbar)'+'\n'+'Check: every dive (dp>0) should be blue and climb (dp<0) red. ',fontweight='bold')
 
