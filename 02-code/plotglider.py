@@ -318,4 +318,147 @@ def plot_dp(u1,i1,u2,i2,idx_d,idx_c):
     plt.grid() ; plt.ylabel(i2,fontweight='bold') ;
     
     
+def bin_dp(u1, unitname, dp):
+    """ Bin profile data from glider into coarse bins for quick plotting:
+    default of dp=10m
+    Parameters
+    ----------
+    u1: xarray.Dataset for a glider
+    dp: size of pressure bin, eg. gridding onto a 10-m bin
+    """
     
+    # Not super happy about the variable names.  Would rather not hard-code them 
+    # in case we come up with better names later. - EFW
+    presname = 'pressure_dbar'
+    idxname = 'profile_index'
+    
+    pres = u1[presname].values
+    prof_idx = u1[idxname].values
+    
+    # Is't using the dp input yet - EFW
+    bins10m = np.linspace(0,1000,101)
+    pres10m = np.linspace(5,995,100)
+
+    # Get a unique list of all the dive numbers (whole *.0 - dive, and half *.5 - climb)
+    divenum_vec = np.unique(u1[idxname].values)
+    # Remove the nan values
+    divenum_vec = divenum_vec[~np.isnan(divenum_vec)]
+
+    # This isn't great - at the moment, the function has hard-coded which dataarrays
+    # within dataset u1 will be binned.  But we actually want this to operate on whatever
+    # data are in there (maybe except from pressure_dbar)
+    tempname = 'sci_water_temp'
+    condname = 'sci_water_cond'
+    oxyname = 'sci_oxy4_oxygen'
+    salname = 'derived_salinity'
+    densname = 'derived_potential_density'
+    ptmpname = 'derived_potential_temperature'
+    latname = 'm_gps_lat'
+    lonname = 'm_gps_lon'
+    
+    counter = 0
+    for i in divenum_vec:
+        # Subselect the xarray dataset for the dive or climb indices only
+        u11 = u1.where(u1[idxname]==i,drop=True)
+
+        # Calculate the median of values within the bin
+        ddive = u11.groupby_bins(presname,bins10m).median()
+
+        # Asign dimensions
+        temp = ddive[tempname].values
+        cond = ddive[condname].values
+        oxy4 = ddive[oxyname].values
+        salin = ddive[salname].values
+        pden = ddive[densname].values
+        ptemp = ddive[ptmpname].values
+        lat = ddive[latname].values
+        lon = ddive[lonname].values
+
+        # Reshape
+        temp = temp[np.newaxis, :]
+        lat = lat[np.newaxis, :]
+        lon = lon[np.newaxis, :]
+        cond = cond[np.newaxis, :]
+        oxy4 = oxy4[np.newaxis, :]
+        salin = salin[np.newaxis, :]
+        pden = pden[np.newaxis, :]
+        ptemp = ptemp[np.newaxis, :]
+
+        mycoords = dict(
+            divenum = (["divenum"], [i],
+                      dict(long_name = "Profile index")),
+            pressure = (["pressure"], pres10m,
+                       dict(long_name = "Pressure",
+                           units = "dbar")),
+        )
+
+
+        myvars = dict(
+            lat = (['divenum', 'pressure'], lat,
+                  dict(long_name = "Latitude",
+                      units = 'Degrees north')),
+            lon = (['divenum', 'pressure'], lon,
+                   dict(long_name = "Longitude",
+                        units = "Degrees east")),
+            cond = (['divenum', 'pressure'], cond,
+                   dict(long_name = "Conductivity",
+                       units = "need to check")),
+            temp = (['divenum', 'pressure'], temp,
+                   dict(long_name = "Temperature",
+                       units = "Degrees C")),
+            oxy4 = (['divenum', 'pressure'], oxy4,
+                   dict(long_name = "Oxygen of some sort",
+                       units = "Need to check")),
+            salin = (['divenum', 'pressure'], salin,
+                    dict(long_name = "Derived salinity",
+                        units = "")),
+            pden = (['divenum', 'pressure'], pden,
+                   dict(long_name = "Potential density",
+                       units = "kg/m3")),
+            ptemp = (['divenum', 'pressure'], ptemp,
+                    dict(long_name = "Potential temperature",
+                        units = "Degrees C")),
+        )
+
+        myattrs = dict(
+            unit = unitname,
+            creator_name = 'Eleanor Frajka-Williams',
+        )
+
+        blank_new = xr.Dataset(data_vars=myvars, coords=mycoords, attrs=myattrs)
+
+        if counter==0:
+            blank_full = blank_new
+            counter += 1
+        else:
+            blank_full = blank_full.combine_first(blank_new)
+            counter += 1
+            
+    return blank_full
+
+
+
+def plot_sxn(ds1):
+    # Make some simple section plots
+    fig,  axes = plt.subplots(nrows=3, figsize=(10,10))
+    slevels = [32, 34, 34.6, 34.8, 34.85, 34.9, 35]
+    ds1["salin"].plot.contourf(ax=axes[0], x='divenum',y='pressure', 
+                             ylim=[1000,0], yincrease=False,
+                             add_labels=True, levels=slevels, cmap='viridis')
+    tstr = ds1.attrs['unit']
+    axes[0].set_title(tstr)
+
+    tlevels = [0, 2, 3, 3.5, 4, 4.5, 5, 5.5, 6, 7]
+    ds1["temp"].plot.contourf(ax=axes[1], x='divenum', y='pressure',
+                             ylim=[1000,0], yincrease=False,
+                             add_labels=True, levels=tlevels, cmap="RdYlBu_r")
+
+    ds1["oxy4"].plot.pcolormesh(ax=axes[2], x='divenum', y='pressure',
+                                ylim=[1000,0], yincrease=False,
+                                add_labels=True, cmap="BrBG")
+    
+    plt.tight_layout()
+    
+    # Save
+    fname = tstr+'_sxn'
+    save_figure(fig, fname)
