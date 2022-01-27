@@ -3,7 +3,7 @@ import numpy as np
 from setdir import *
 import xarray as xr
 
-def dive_index(unit):
+def dive_index(unit, presname, idxname):
     """ Define Profile index. 
     Use initial vertical sampling dp=5-10dbar loaded by Iridium. Check later with higher vertical sampling.
     Parameters
@@ -16,8 +16,8 @@ def dive_index(unit):
            Localise dives indices (idx_d) and climbs (idx_c).
     """
 
-    pres=unit['pressure_dbar'].values.copy()
-    unit['profile_index'] = xr.DataArray(np.full(pres.shape[0],np.nan), dims=['time'])
+    pres=unit[presname].values.copy()
+    unit[idxname] = xr.DataArray(np.full(pres.shape[0],np.nan), dims=['time'])
     # remove surface values (above .5 m)
     pres[ np.where(pres<0.5)[0] ] = np.nan
     # localise ~nan pressure
@@ -47,11 +47,52 @@ def dive_index(unit):
             else:
                 if np.sign(pres[i]-pres[p0]) == -1:
                     init_index += .5
-            unit['profile_index'][i]=init_index
+            unit[idxname][i]=init_index
 
-    idx_c = np.where( unit['profile_index'] % 1 == .5)[0] # climb indices
-    idx_d = np.where( unit['profile_index'] % 1 == 0)[0] # dive indices
+    # -------------------------------
+    # EFW edited:
+    # Slight modification to the count, where there were some climbs that ended once the vehicle
+    # was above 5 dbar, but could've been extended further by 1 index.
     
+    # Extract vector of pressure and profile index values.
+    pres = unit[presname].values.copy()
+    prof_idx = unit[idxname].values
+    
+    # Minimum dive number, maximum dive number
+    dmin = int(prof_idx[np.where(~np.isnan(prof_idx))].min())
+    dmax = int(prof_idx[np.where(~np.isnan(prof_idx))].max()-.5)
+
+    # Cycle through each dive number successively
+    for i in range(dmin,dmax):
+        # Indices for one dive and subsequent climb
+        idx_dive1 = np.where(prof_idx==i)[0]
+        idx_climb1 = np.where(prof_idx==i+.5)[0]
+
+        if len(idx_dive1):
+            pstart = pres[idx_dive1[0]]
+            if pstart>5:
+                val1 = prof_idx[idx_dive1[0]-1]
+                pstart_1 = pres[idx_dive1[0]-1]
+                if np.isnan(val1) & (pstart_1<pstart):
+                    print(str(i)+'. Changing idive, idx was '\
+                          +str(idx_dive1[0])+' is now '\
+                          ,str(idx_dive1[0]-1))
+                    prof_idx[idx_dive1[0]-1] = i
+        if len(idx_climb1):
+            pend = pres[idx_climb1[-1]]
+            pend_1 = pres[idx_climb1[-1]+1]
+            if pend_1 < pend:
+                val2 = prof_idx[idx_climb1[-1]+1]
+                if np.isnan(val2):
+                    prof_idx[idx_climb1[-1]+1] = i+.5
+                    print(str(i)+'. Changing iclimb, idx was '\
+                          +str(idx_climb1[0])+', is now '\
+                          +str(idx_climb1[0]+1))
+
+    # Export all the indices                
+    idx_c = np.where( unit[idxname] % 1 == .5)[0] # climb indices
+    idx_d = np.where( unit[idxname] % 1 == 0)[0] # dive indices
+
     return unit, idx_d, idx_c
 
 
@@ -123,11 +164,11 @@ def bin_dp(u1, unitname, dp):
                            units = "dbar")),
         )
     
-        myattrs = dict(
-            unit = unitname,
-        )
-
-        blank_new = xr.Dataset(data_vars=myvars, coords=mycoords, attrs=myattrs)
+        # Pass existing attributes.
+        # Might consider adding an attribute to describe the process used for gridding.
+        myattr = u1.attrs
+    
+        blank_new = xr.Dataset(data_vars=myvars, coords=mycoords, attrs=myattr)
 
         if counter==0:
             blank_full = blank_new
