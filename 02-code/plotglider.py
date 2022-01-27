@@ -339,12 +339,12 @@ def plot_sxn(ds1, varlist):
                                ylim=[1000, 0], yincrease=False,
                                add_labels=True)
     
-        tstr = ds1.attrs['unit']
+        tstr = ds1.attrs['Serial number']+': '+ds1.attrs['Platform name']
         axes[0].set_title(tstr)
         counter += 1
     
     plt.tight_layout()
     
     # Save
-    fname = tstr+'_sxn'
+    fname = ds1.attrs['Serial number']+'_sxn'
     save_figure(fig, fname)
