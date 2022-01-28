@@ -1,5 +1,6 @@
 from scipy.io import loadmat # to load bathymetry
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from setdir import *
@@ -178,8 +179,8 @@ def plot_profiles(unit409,ndays,titlestr):
     # Most recent profiles
     max_time = unit409.time.max().values
     dt1 = np.timedelta64(-ndays, 'D')
-    ds1 = unit409.where(unit409[timename]>=(max_time+dt1))
-
+    ds1 = unit409.where(unit409[timename]>=(max_time+dt1), drop=True)
+    min_time = ds1.time.min().values
     
     # Maximum pressure for plot limits
     maxp = ds1[presname].max()
@@ -198,6 +199,11 @@ def plot_profiles(unit409,ndays,titlestr):
     ax2 = plt.subplot(1,2,2)
     ax2.plot(ds1[tempname], ds1[presname])
     ax2.set_xlabel('Temperature [deg C]')
+    timestr1 = pd.to_datetime(min_time).strftime('%b %d')# b for month MMM
+    timestr2 = pd.to_datetime(max_time).strftime('%b %d')
+    timestr3 = pd.to_datetime(max_time).strftime('%Y')
+
+    ax2.set_title(timestr1+' - '+timestr2+', '+timestr3)
     ax2.set_ylabel('')
     
     ax2.invert_yaxis()
@@ -346,4 +352,154 @@ def plot_sxn(ds1, varlist):
     
     # Save
     fname = ds1.attrs['Serial number']+'_sxn'
+    save_figure(fig, fname)
+    
+    
+def plot_waterfall(ds_grid1, varlist):
+    # Expects the gridded data as input
+    divenum = ds_grid1.divenum
+    
+    presname = 'pressure'
+    pres1 = ds_grid1[presname].values.copy()
+    mp = len(divenum)
+
+    # Choose some colors
+    colors = plt.cm.rainbow(np.linspace(0, 1, mp))
+
+
+    # How many variables to plot
+    nn = len(varlist)
+
+    # Record the max-min values in ddiff and the avg value in dmean
+    ddiff = dict()
+    dmean = dict()
+
+    for dataname in varlist:
+        # Choose some parameters for the waterfall plot
+        dsal=np.zeros(len(divenum))
+        msal=np.zeros(len(divenum))
+        for ddo in range(len(divenum)):
+            sal1 = ds_grid1[dataname][:,ddo]
+            dsal1 = sal1.max()-sal1.min()
+            dsal[ddo]=dsal1
+            msal[ddo]=sal1.mean()
+
+        # Typical difference between the maximum and minimum salinty in a profile
+        dS = np.nanmedian(dsal) 
+        dM = np.nanmedian(msal)
+        ddiff[dataname] = dS
+        dmean[dataname] = dM
+    
+    # Make some simple section plots
+    fig,  axes = plt.subplots(nrows=nn, figsize=(10,3*nn))
+    
+    counter = 0
+    for dataname in varlist:
+        if nn==1:
+            ax1 = axes
+        else:
+            ax1 = axes[counter]
+
+        # scale factor on a profile
+        s1 = ddiff[dataname]/4
+
+        for ddo in range(len(divenum)):
+            sal1 = ds_grid1[dataname][:,ddo] - dmean[dataname]
+            ax1.plot(sal1/s1+ddo, pres1, color=colors[ddo])
+    
+        # Pressure increases with depth
+        ax1.invert_yaxis()
+        ax1.set_title(dataname)
+#        ax1.ylabel('Pressure [dbar]')
+        
+
+        counter += 1
+        
+    ax1.set_xlabel('Profile index')
+    
+    
+    
+    
+def plot_gridprof(grid409,ndays,varlist,titlestr):
+    # Variable names (could be passed as a dictionary)
+    timename = 'time'
+    presname = 'pressure'
+    
+    # Get a mean time per profile
+    time1 = grid409[timename].values
+    timenan = pd.isnull(time1)
+    time2 = time1.astype('float')
+    time2[timenan] = np.nan
+    time3 = np.nanmean(time2,axis=0)
+    timevec = time3.astype('datetime64[ns]')
+
+    grid409["timevec"] = ('divenum', timevec)
+
+    # Most recent profiles
+    max_time = grid409["timevec"].max().values
+    dt1 = np.timedelta64(-ndays, 'D')
+    ds1 = grid409.where(grid409["timevec"]>=(max_time+dt1), drop=True).copy()
+    min_time = max_time+dt1
+    print(max_time)
+    print(min_time)
+    # Create a time string
+    timestr1 = pd.to_datetime(min_time).strftime('%b %d')# b for month MMM
+    timestr2 = pd.to_datetime(max_time).strftime('%b %d')
+    timestr3 = pd.to_datetime(max_time).strftime('%Y')
+    timestr = timestr1+' - '+timestr2+', '+timestr3
+
+    
+    # Maximum pressure for plot limits
+    maxp = ds1[presname].max()
+    pres1 = ds1[presname].values.copy()
+
+    # Expects the gridded data as input
+    divenum = ds1.divenum
+    mp = len(divenum)
+    # Choose some colors
+    colors = plt.cm.rainbow(np.linspace(0, 1, mp))
+
+    # How many variables to plot
+    nn = len(varlist)
+
+    sns.set_theme()
+
+
+    # Make some simple section plots
+    fig,  axes = plt.subplots(ncols=nn, figsize=(3*nn,5))
+
+    counter = 0
+    for dataname in varlist:
+        if nn==1:
+            ax1 = axes
+        else:
+            ax1 = axes[counter]
+
+        for ddo in range(len(divenum)):
+            sal1 = ds1[dataname][:,ddo]
+            ax1.plot(sal1, pres1, color=colors[ddo])
+
+        # Pressure increases with depth
+        ax1.invert_yaxis()
+        ax1.set_xlabel(dataname)
+        if counter==0:
+            ax1.set_ylabel('Pressure [dbar]')
+            ax1.set_title(titlestr)
+        elif counter==nn-1:
+            ax1.set_title(timestr)
+            
+        counter += 1
+        ax1.set_ylim([maxp,0])
+    
+        forceAspect(ax1,ratio=2)
+    
+
+        plt.tight_layout()
+
+        
+    # Save
+#    plt.colorbar(colors)
+    fig = plt.gcf()
+
+    fname = titlestr+'_gridprof'
     save_figure(fig, fname)
