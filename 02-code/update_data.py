@@ -184,10 +184,10 @@ for uname in unit_list:
     # Check the response code 
     # (200 is good.  If you get something else, token may need refreshing)
     if not resp.status_code==200:
-        print(i+'[ resp '+str(resp.status_code)+' ] '\
+        print(uname+' - [ resp '+str(resp.status_code)+' ] '\
               'Cannot access data - May need to refresh token? or check URL variable')
     else:
-        print(i+'[ resp '+str(resp.status_code)+' ] '\
+        print(uname+' - [ resp '+str(resp.status_code)+' ] '\
               'Good response code - parsing data')
 
         # Parse the 'resp' string into a dataFrame
@@ -283,11 +283,11 @@ for uname in unit_list:
     # Check the response code 
     # (200 is good.  If you get something else, token may need refreshing)
     if not resp.status_code==200:
-        print(i+'[ resp '+str(resp.status_code)+' ] '\
-              'Cannot access data - May need to refresh token? Or check the URL variable')
+        print(uname+' - [ resp '+str(resp.status_code)+' ] '\
+              'Cannot access positions - May need to refresh token? Or check the URL variable')
     else:
-        print(i+'[ resp '+str(resp.status_code)+' ] '\
-              'Good response code - parsing data')
+        print(uname+' - [ resp '+str(resp.status_code)+' ] '\
+              'Good response code - parsing positions')
 
         # Parse the string into a dataFrame
         json_string = resp.content.decode("utf-8") # Get rid of the leading b
