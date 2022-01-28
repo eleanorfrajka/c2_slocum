@@ -29,12 +29,12 @@ from plotglider import *
 # Slocum gliders: A dictionary with the key as the serial number ('unit_398') 
 # and then the plain text name, "Churchill"
 glider_names = {
-    'unit_409': 'Grease',
     'unit_398': 'Churchill',
+    'unit_409': 'Grease',
 }
-# Dictionary keys must match the serial number used in the API.  
+# Dictionary keys MUST match the serial number format used in the API.  
 
-# Choose a start date.  
+# Choose a start date in YYYY-MM-DD.  
 # Earliest valid data for TERIFIC was 2021-12-12, but there were some in-air 
 # measurements before
 mission_startdate = '2021-12-12'
@@ -49,16 +49,16 @@ var_physics = ['sci_water_pressure', 'sci_water_temp', 'sci_water_cond',
            ]
 
 # Wetlabs on Unit_398: these parameters seem to work (bb2flsv9)
-wetlabs398 = ['sci_bb2flsv9_b532_scaled', # units ug/l  - blue?? or green
+# Wetlabs on unit_409: these parameters seem to work (flbbcd)
+# POSSIBLE TO JUST ADD MORE VARIABLES AND THEY WILL BE REMOVED LATER
+# BUT PROBABLY SLOWS THINGS DOWN...
+var_bio = ['sci_bb2flsv9_b532_scaled', # units ug/l  - blue?? or green
             'sci_bb2flsv9_b700_scaled', # units ug/l - red
             'sci_bb2flsv9_chl_scaled', # units ug/l
-           ]
-
-# Wetlabs on unit_409: these parameters seem to work (flbbcd)
-wetlabs409 = ['sci_flbbcd_cdom_units', # ppb - 409
-              'sci_flbbcd_chlor_units', # ug/l
-              'sci_flbbcd_bb_units', # ??? is this blue backscatter?
-             ]
+            'sci_flbbcd_cdom_units', # ppb - 409
+            'sci_flbbcd_chlor_units', # ug/l
+            'sci_flbbcd_bb_units', # ??? is this blue backscatter?
+          ]
 
 
 # Some details for the attributes in the netcdf file.
@@ -66,12 +66,12 @@ platform_type = 'slocum' # Must be in this format to work with the API
 project_name = 'TERIFIC'
 institution_name = 'National Oceanography Centre, UK'
 
-# Grid interval (pressure in dbar)
+# Choice of grid interval (pressure in dbar)
 dp=10
 
-# Name for a new data array to index profiles
+# Choose name for new DataArrays to index the profiles:
 idxname = 'profile_index'
-# Name for data array already created for pressure in dbar
+# Choose name for new DataArray for pressure in dbar:
 presname = 'pressure_dbar'
 
 
@@ -141,7 +141,7 @@ api_choice = 'timeseries/observations/'
 format_choice = 'csv_combined_transposed?'
 
 # Format the variable list for the API
-var_list = var_physics+wetlabs398+wetlabs409
+var_list = var_physics+var_bio
 var_str = ''
 for i in var_list:
     var_str = var_str+'variable='+i+'&'
@@ -236,7 +236,7 @@ for uname in unit_list:
                      "Institution": institution_name,
                      "Date created": date_created, 
                      "Serial number": i,
-                     "Platform name": glider_names[i],
+                     "Platform name": glider_names[uname],
                 }
 
         ds_2021 = ds_2021.assign_attrs(attr_dict)
@@ -316,7 +316,7 @@ for uname in unit_list:
                      "Institution": institution_name,
                      "Date created": date_created, 
                      "Serial number": i,
-                      "Platform name": glider_names[i],
+                      "Platform name": glider_names[uname],
                 }
 
 
@@ -325,7 +325,7 @@ for uname in unit_list:
     #--------------------------------------------------------------
     # Format the output file name (and path in ../01-data/01-raw/
     #--------------------------------------------------------------
-    outfile = i+'_position_'+maxtimestr+'.nc'
+    outfile = uname+'_position_'+maxtimestr+'.nc'
     outfile_with_path = cat_raw_path(outfile)
 
     ds_pos.to_netcdf(outfile_with_path, 'w')
@@ -391,5 +391,5 @@ for uname in unit_list:
         # Saves output to 01-data/03-processed/*_bin10m.nc
         #--------------------------------------------------------------
         grid_ds = bin_dp(data_ds, data_ds.attrs['Serial number'], dp)
-        grid_ds.to_netcdf(cat_prof_path(grid_ds.attrs['Serial number']+'_bin10m.nc'), mode='w')
+        grid_ds.to_netcdf(cat_proc_path(grid_ds.attrs['Serial number']+'_bin10m.nc'), mode='w')
         
