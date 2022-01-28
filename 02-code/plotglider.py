@@ -248,8 +248,6 @@ def deg2dec(deg1, mindec):
 
 
 
-
-
 def plot_dp(u1,i1,u2,i2,idx_d,idx_c):
     """ Plot to check that profile_index from dive_index() are correct: 
     Every dive (dp>0) should be blue and climb (dp<0) red. 
@@ -265,6 +263,7 @@ def plot_dp(u1,i1,u2,i2,idx_d,idx_c):
     ax1.plot(u1['time'][idx_d[i1]],np.diff(u1['pressure_dbar'])[idx_d[i1]],'.b')
     ax1.plot(u1['time'][idx_c[i1]],np.diff(u1['pressure_dbar'])[idx_c[i1]],'.r')
     ax1.xaxis.set_major_formatter(mdates.DateFormatter("%d-%b"))
+    ax1.set_ylim([-15,15]) ;
     plt.grid() ; plt.ylabel(i1,fontweight='bold') ;
     plt.title('dp (dbar)'+'\n'+'Check: every dive (dp>0) should be blue and climb (dp<0) red. ',fontweight='bold')
 
