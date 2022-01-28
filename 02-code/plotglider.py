@@ -247,50 +247,6 @@ def deg2dec(deg1, mindec):
 
 
 
-def dive_index(unit):
-    """ Define Profile index. 
-    Use initial vertical sampling dp=5-10dbar loaded by Iridium. Check later with higher vertical sampling.
-    Parameters
-    ----------
-    unit : xarray.Dataset for each glider.
-    Returns
-    -------
-    unit : xarray.Dataset
-           Profile index in unit['profile_index'] with .0 for dives and .5 for climbs.
-           Localise dives indices (idx_d) and climbs (idx_c).
-    """
-
-    pres=unit['pressure_dbar'].values.copy()
-    unit['profile_index'] = xr.DataArray(np.full(pres.shape[0],np.nan), dims=['time'])
-    # remove surface values (above .5 m)
-    pres[ np.where(pres<0.5)[0] ] = np.nan
-    # localise ~nan pressure
-    pres_idx=np.where(~np.isnan(pres))[0]
-    
-    # 10-20 shallow points have two identical pressure measurements, potentially separated by nans. 
-    # Remove latest measurement, otherwise, inflection points are missed.
-    idx_rm=np.where(np.diff(pres[pres_idx])==0)[0]
-    pres[pres_idx[idx_rm]]=np.nan
-    # relocalise ~nan pressure without identical pressure measurements.
-    pres_idx=np.where(~np.isnan(pres))[0]
-    
-    # Initial index based on 1st profile (398:dive or 409:climb).
-    init_index=[1 if np.diff(pres[pres_idx[1:3]])>0 else 1.5][0]
-    for i in range(pres_idx[1],pres_idx[-2]):
-        # Localise inflection point for 3 valid depths: i.e. sign((p_{z+1}-p_{z})*(p_{z}-p_{z-1}))<0
-        if ~np.isnan(pres[i]) :
-            idxp=np.where(pres_idx==i)[0][0]
-            p0=pres_idx[idxp-1]
-            p1=pres_idx[idxp+1]
-            if np.sign((pres[p1]-pres[i])*(pres[i]-pres[p0])) == -1:
-                init_index+=.5
-            unit['profile_index'][i]=init_index
-            
-    idx_c = np.where( unit['profile_index'] % 1 == .5)[0] # climb indices
-    idx_d = np.where( unit['profile_index'] % 1 == 0)[0] # dive indices
-    
-    return unit, idx_d, idx_c
-
 
 def plot_dp(u1,i1,u2,i2,idx_d,idx_c):
     """ Plot to check that profile_index from dive_index() are correct: 
@@ -319,147 +275,75 @@ def plot_dp(u1,i1,u2,i2,idx_d,idx_c):
     plt.grid() ; plt.ylabel(i2,fontweight='bold') ;
     
     
-def bin_dp(u1, unitname, dp):
-    """ Bin profile data from glider into coarse bins for quick plotting:
-    default of dp=10m
-    Parameters
-    ----------
-    u1: xarray.Dataset for a glider
-    dp: size of pressure bin, eg. gridding onto a 10-m bin
-    """
-    
-    # Not super happy about the variable names.  Would rather not hard-code them 
-    # in case we come up with better names later. - EFW
-    presname = 'pressure_dbar'
-    idxname = 'profile_index'
-    
-    pres = u1[presname].values
-    prof_idx = u1[idxname].values
-    
-    # Is't using the dp input yet - EFW
-    bins10m = np.linspace(0,1000,101)
-    pres10m = np.linspace(5,995,100)
 
-    # Get a unique list of all the dive numbers (whole *.0 - dive, and half *.5 - climb)
-    divenum_vec = np.unique(u1[idxname].values)
-    # Remove the nan values
-    divenum_vec = divenum_vec[~np.isnan(divenum_vec)]
 
-    # This isn't great - at the moment, the function has hard-coded which dataarrays
-    # within dataset u1 will be binned.  But we actually want this to operate on whatever
-    # data are in there (maybe except from pressure_dbar)
-    tempname = 'sci_water_temp'
-    condname = 'sci_water_cond'
-    oxyname = 'sci_oxy4_oxygen'
-    salname = 'derived_salinity'
-    densname = 'derived_potential_density'
-    ptmpname = 'derived_potential_temperature'
-    latname = 'm_gps_lat'
-    lonname = 'm_gps_lon'
+
+
+def plot_sxn(ds1, varlist):
+    
+    # How many variables to plot
+    nn = len(varlist)
+
+
+    slevels = [32, 34, 34.6, 34.8, 34.85, 34.9, 35]
+    smapstr = 'viridis'
+    tlevels = [0, 2, 3, 3.5, 4, 4.5, 5, 5.5, 6, 7]
+
+
+    # Make some simple section plots
+    fig,  axes = plt.subplots(nrows=nn, figsize=(10,3*nn))
     
     counter = 0
-    for i in divenum_vec:
-        # Subselect the xarray dataset for the dive or climb indices only
-        u11 = u1.where(u1[idxname]==i,drop=True)
+    for varname in varlist:
+        data1 = ds1[varname]
 
-        # Calculate the median of values within the bin
-        ddive = u11.groupby_bins(presname,bins10m).median()
+        if varname=='derived_salinity':
+            levels = slevels
+            cmapstr = smapstr
+        elif varname=='sci_water_temp':
+            levels=[0, 2, 3, 3.5, 4, 4.5, 5, 5.5, 6, 7]
+            cmapstr = 'RdYlBu_r'
+        elif varname=='sci_oxy4_oxygen':
+            levels = [350, 360, 370, 380, 390, 400, 410, 420]
+            cmapstr = 'BrBG'
+        elif (varname=='sci_flbbcd_chlor_units') | (varname=='sci_bb2flsv9_chl_scaled'):
+            levels = [0, .05, .1, .15, .2]
+            cmapstr='YlGn'
+        elif varname=='sci_flbbcd_cdom_units':
+            levels = [-.2, 0, .1, .2, .5]
+            levels = [x /1000 for x in levels]
+            cmapstr = 'YlOrRd'
+        elif varname=='sci_flbbcd_bb_units':
+            levels = [1, 1.5, 2, 2.5, 3 , 5]
+            levels = [x / 10000 for x in levels]
+            cmapstr ='Reds'
+        elif (varname=='sci_bb2flsv9_b532_scaled'):
+            levels = [0, .2, .5, .7, 1]
+            levels = [x / 1000 for x in levels]
+            cmapstr = 'Blues'
 
-        # Asign dimensions
-        temp = ddive[tempname].values
-        cond = ddive[condname].values
-        oxy4 = ddive[oxyname].values
-        salin = ddive[salname].values
-        pden = ddive[densname].values
-        ptemp = ddive[ptmpname].values
-        lat = ddive[latname].values
-        lon = ddive[lonname].values
-
-        # Reshape
-        temp = temp[np.newaxis, :]
-        lat = lat[np.newaxis, :]
-        lon = lon[np.newaxis, :]
-        cond = cond[np.newaxis, :]
-        oxy4 = oxy4[np.newaxis, :]
-        salin = salin[np.newaxis, :]
-        pden = pden[np.newaxis, :]
-        ptemp = ptemp[np.newaxis, :]
-
-        mycoords = dict(
-            divenum = (["divenum"], [i],
-                      dict(long_name = "Profile index")),
-            pressure = (["pressure"], pres10m,
-                       dict(long_name = "Pressure",
-                           units = "dbar")),
-        )
-
-
-        myvars = dict(
-            lat = (['divenum', 'pressure'], lat,
-                  dict(long_name = "Latitude",
-                      units = 'Degrees north')),
-            lon = (['divenum', 'pressure'], lon,
-                   dict(long_name = "Longitude",
-                        units = "Degrees east")),
-            cond = (['divenum', 'pressure'], cond,
-                   dict(long_name = "Conductivity",
-                       units = "need to check")),
-            temp = (['divenum', 'pressure'], temp,
-                   dict(long_name = "Temperature",
-                       units = "Degrees C")),
-            oxy4 = (['divenum', 'pressure'], oxy4,
-                   dict(long_name = "Oxygen of some sort",
-                       units = "Need to check")),
-            salin = (['divenum', 'pressure'], salin,
-                    dict(long_name = "Derived salinity",
-                        units = "")),
-            pden = (['divenum', 'pressure'], pden,
-                   dict(long_name = "Potential density",
-                       units = "kg/m3")),
-            ptemp = (['divenum', 'pressure'], ptemp,
-                    dict(long_name = "Potential temperature",
-                        units = "Degrees C")),
-        )
-
-        myattrs = dict(
-            unit = unitname,
-            creator_name = 'Eleanor Frajka-Williams',
-        )
-
-        blank_new = xr.Dataset(data_vars=myvars, coords=mycoords, attrs=myattrs)
-
-        if counter==0:
-            blank_full = blank_new
-            counter += 1
+        elif (varname=='sci_bb2flsv9_b700_scaled'):
+            levels = [0, .5, 1, 1.5, 2, 2.5, 3]
+            levels = [x/1000 for x in levels]
+            cmapstr='Reds'
         else:
-            blank_full = blank_full.combine_first(blank_new)
-            counter += 1
-            
-    return blank_full
+            levels = []
 
-
-
-def plot_sxn(ds1):
-    # Make some simple section plots
-    fig,  axes = plt.subplots(nrows=3, figsize=(10,10))
-    slevels = [32, 34, 34.6, 34.8, 34.85, 34.9, 35]
-    ds1["salin"].plot.contourf(ax=axes[0], x='divenum',y='pressure', 
-                             ylim=[1000,0], yincrease=False,
-                             add_labels=True, levels=slevels, cmap='viridis')
-    tstr = ds1.attrs['unit']
-    axes[0].set_title(tstr)
-
-    tlevels = [0, 2, 3, 3.5, 4, 4.5, 5, 5.5, 6, 7]
-    ds1["temp"].plot.contourf(ax=axes[1], x='divenum', y='pressure',
-                             ylim=[1000,0], yincrease=False,
-                             add_labels=True, levels=tlevels, cmap="RdYlBu_r")
-
-    ds1["oxy4"].plot.pcolormesh(ax=axes[2], x='divenum', y='pressure',
-                                ylim=[1000,0], yincrease=False,
-                                add_labels=True, cmap="BrBG")
+        if len(levels)>2: 
+            data1.plot.pcolormesh(ax=axes[counter], x='divenum', y='pressure',
+                               ylim=[1000, 0], yincrease=False,
+                               add_labels=True, levels=levels, cmap=cmapstr)
+        else:
+            data1.plot.pcolormesh(ax=axes[counter], x='divenum', y='pressure',
+                               ylim=[1000, 0], yincrease=False,
+                               add_labels=True)
+    
+        tstr = ds1.attrs['Serial number']+': '+ds1.attrs['Platform name']
+        axes[0].set_title(tstr)
+        counter += 1
     
     plt.tight_layout()
     
     # Save
-    fname = tstr+'_sxn'
+    fname = ds1.attrs['Serial number']+'_sxn'
     save_figure(fig, fname)
