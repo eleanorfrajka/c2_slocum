@@ -22,6 +22,7 @@ import requests
 import json
 from io import StringIO
 import ast # To handle the string conversion when loading json filee
+from pathlib import Path
 # Own packages of code
 from setdir import *
 from parseglider import *
@@ -336,6 +337,38 @@ for uname in unit_list:
     ds_pos.to_netcdf(outfile_with_path, 'w')
 
 
+
+#----------------------------------------------------------------------------
+# Save list of all the variables output from the API, using /timeseries/meta/variables/
+#----------------------------------------------------------------------------
+
+for uname in unit_list:
+    ursl_var_list='https://api.c2.noc.ac.uk/timeseries/meta/variables?platform_serial='+str(uname)+'&platform_type=slocum'
+    resp_var_list = requests.get(ursl_var_list, headers=headers)
+    
+    # Check the response code 
+    # (200 is good.  If you get something else, token may need refreshing)
+    if not resp_var_list.status_code==200:
+        print(uname+' - [ resp '+str(resp_var_list.status_code)+' ] '\
+              'Cannot access data - May need to refresh token? or check URL variable')
+    else:
+        print(uname+' - [ resp '+str(resp_var_list.status_code)+' ] '\
+              'Good response code - parsing var list')
+        
+        data_folder='03-results/variables_list/'
+        filename=uname+'_var_list.txt'
+        filename_sci=uname+'_var_list_sci.txt' # Save only sci & derived data
+        if not Path('../'+data_folder).exists():
+            Path('../'+data_folder).mkdir()
+    
+        var_list = resp_var_list.content.decode("utf-8")[1:-2].split(',') # split converts str to list, [1:-2] removes square brackets
+        var_list2 = [k.strip().replace('"', '') for k in var_list ] # remove leading space and double quotes
+        var_list_sci=[k for k in var_list2 if (k[:3]=='sci') | (k[:2]=='de')] # keep only sci & derived data
+        
+        np.savetxt( cat_data_path(data_folder,filename), var_list2, delimiter =",",fmt ='%s')
+        np.savetxt( cat_data_path(data_folder,filename_sci), var_list_sci, delimiter =",",fmt ='%s')
+    
+    
 
 #--------------------------------------------------------------
 # DATA PROCESSING:
