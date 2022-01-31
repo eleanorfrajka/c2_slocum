@@ -1,3 +1,6 @@
+"""
+Set of functions for plotting glider data
+"""
 from scipy.io import loadmat # to load bathymetry
 import numpy as np
 import pandas as pd

@@ -1,3 +1,6 @@
+"""
+Set of functions to parse data from C2 format into something that knows about profiles
+"""
 from scipy.io import loadmat # to load bathymetry
 import numpy as np
 from setdir import *

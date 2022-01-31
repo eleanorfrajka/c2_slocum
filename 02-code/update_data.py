@@ -1,5 +1,8 @@
 """
-Code to download glider (slocum) data from the C2/API web services at NOC MARS.  
+Script to download glider (slocum) data from the C2/API web services at NOC MARS.  
+
+1. Update your token in myToken.txt: https://api.c2.noc.ac.uk/charon/tokens/issue
+2. Run update_data.py at the command line
 
 Creates netcdf files for later visualisation of glider data.
 
