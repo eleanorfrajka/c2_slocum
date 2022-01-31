@@ -130,7 +130,7 @@ tstart = pd.Timestamp(mission_startdate+'T00')
 download_startdate = mission_startdate+'T00%3A00%3A00'
 
 # Date created (for attributes in netcdf file)
-date_created = datetime.datetime.now().strftime(time_strf)
+date_created = datetime.now().strftime(time_strf)
 
 
 
@@ -207,7 +207,7 @@ for uname in unit_list:
         # Clean up time format and convert pressure units to dbar
         #--------------------------------------------------------------
         data_df['time'] = data_df.timestamp.apply(lambda x:
-                                    datetime.datetime.fromtimestamp(x*0.001))
+                                    datetime.fromtimestamp(x*0.001))
         data_df = data_df.drop(columns='timestamp')
         # Cut data to post deployment
         data_df_2021 = data_df[data_df.time>=tstart].copy()

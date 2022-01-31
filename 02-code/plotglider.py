@@ -7,7 +7,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from setdir import *
-import seaborn as sns
+from datetime import datetime, timedelta
+import cmocean
+
+#import seaborn as sns
 import xarray as xr
 
 font = {'family' : 'sans-serif',
@@ -315,6 +318,7 @@ def plot_sxn(ds1, varlist):
         elif varname=='sci_oxy4_oxygen':
             levels = [350, 360, 370, 380, 390, 400, 410, 420]
             cmapstr = 'BrBG'
+            cmapstr = cmocean.cm.oxy
         elif (varname=='sci_flbbcd_chlor_units') | (varname=='sci_bb2flsv9_chl_scaled'):
             levels = [0, .05, .1, .15, .2]
             cmapstr='YlGn'
@@ -423,12 +427,21 @@ def plot_waterfall(ds_grid1, varlist):
     
     
     
-def plot_gridprof(grid409,ndays,varlist,titlestr):
+def plot_gridprof(grid409,ndays,varlist,titlestr,
+                  bathylon,bathylat, bathy):
+    #------------------------------------------
     # Variable names (could be passed as a dictionary)
+    #------------------------------------------
     timename = 'time'
     presname = 'pressure'
+    lonname = 'm_gps_lon'
+    latname = 'm_gps_lat'
     
-    # Get a mean time per profile
+
+
+    #------------------------------------------
+    # Get a mean time per profile - call it timevec
+    #------------------------------------------
     time1 = grid409[timename].values
     timenan = pd.isnull(time1)
     time2 = time1.astype('float')
@@ -438,13 +451,14 @@ def plot_gridprof(grid409,ndays,varlist,titlestr):
 
     grid409["timevec"] = ('divenum', timevec)
 
-    # Most recent profiles
+    
+    #------------------------------------------
+    # Create ds1 with ndays most recent profiles
+    #------------------------------------------
     max_time = grid409["timevec"].max().values
     dt1 = np.timedelta64(-ndays, 'D')
     ds1 = grid409.where(grid409["timevec"]>=(max_time+dt1), drop=True).copy()
     min_time = max_time+dt1
-    print(max_time)
-    print(min_time)
     # Create a time string
     timestr1 = pd.to_datetime(min_time).strftime('%b %d')# b for month MMM
     timestr2 = pd.to_datetime(max_time).strftime('%b %d')
@@ -459,25 +473,46 @@ def plot_gridprof(grid409,ndays,varlist,titlestr):
     # Expects the gridded data as input
     divenum = ds1.divenum
     mp = len(divenum)
-    # Choose some colors
-    colors = plt.cm.rainbow(np.linspace(0, 1, mp))
 
+
+
+    #------------------------------------------
+    # Choose some colors
+    #------------------------------------------
+#    colors = plt.cm.rainbow(np.linspace(0, 1, mp))
+#    colors = plt.cm.coolwarm(np.linspace(0, 1, mp))
+    colors = cmocean.cm.balance(np.linspace(0,1,mp))
+#    cmap = plt.get_cmap('coolwarm',mp)
+#    cmap = cmocean.tools.get_dict(cmocean.cm.balance, N=9)
+    cmap = cmocean.cm.balance._resample(mp)
     # How many variables to plot
     nn = len(varlist)
 
-    sns.set_theme()
-
-
-    # Make some simple section plots
-    fig,  axes = plt.subplots(ncols=nn, figsize=(3*nn,5))
-
+    #------------------------------------------
+    # Set up a wide, multi-panel plot
+    #------------------------------------------
+    fig = plt.figure(constrained_layout=True, figsize=(3*(nn+1),7))
+    # Specify widths for plots (based on 3 profiles + one map)
+    ax_widths = [2.5, 2.5, 2.5, 3]
+    ax_height = [3.5]
+    # Create the subplots
+    gs = fig.add_gridspec(ncols=nn+1, nrows=1, width_ratios=ax_widths,
+                          height_ratios=ax_height)
+    
+    #    axes[0,nn] = gs.subplots(sharey='row')
     counter = 0
     for dataname in varlist:
-        if nn==1:
-            ax1 = axes
+        # Pick the subplot axes
+        if counter==0:
+            ax1 = fig.add_subplot(gs[0, counter])
+            ax0 = ax1
         else:
-            ax1 = axes[counter]
-
+            ax1 = fig.add_subplot(gs[0, counter], sharey=ax0)
+            plt.setp(ax1.get_yticklabels(), visible=False)
+            
+        #------------------------------------------
+        # Plot the individual profiles
+        #------------------------------------------
         for ddo in range(len(divenum)):
             sal1 = ds1[dataname][:,ddo]
             ax1.plot(sal1, pres1, color=colors[ddo])
@@ -493,16 +528,152 @@ def plot_gridprof(grid409,ndays,varlist,titlestr):
             
         counter += 1
         ax1.set_ylim([maxp,0])
-    
-        forceAspect(ax1,ratio=2)
-    
 
-        plt.tight_layout()
+    #------------------------------------------
+    # Add a map to the right of the profiles
+    #------------------------------------------
+    lonvec = ds1[lonname].values
+    xmin = lonvec[~np.isnan(lonvec)].min()-1.75
+    xmax = lonvec[~np.isnan(lonvec)].max()+2
+    latvec = ds1[latname].values
+    ymin = latvec[~np.isnan(latvec)].min()-1.25
+    ymax = latvec[~np.isnan(latvec)].max()+1.25
 
-        
+    # Use grid_spec with custom widths.  Not sure how to set the aspect ratio to Mercator.
+    ax4 = fig.add_subplot(gs[0,counter])
+    import matplotlib 
+    matplotlib.rcParams['contour.negative_linestyle'] = 'solid'
+    cs = ax4.contour(bathylon, bathylat, bathy, [-3000, -2000, -1000, 0], 
+                     colors=[.75, .75, .75], linewidths=3)
+    ax4.set_ylim([ymin, ymax])
+    ax4.set_xlim([xmin, xmax])
+    ax4.clabel(cs, inline=1, fontsize=10)
+    ax4.set_title("Profile locations")
+    
+    # Plot old positions (before ndays) as gray
+    ax4.plot(grid409[lonname],grid409[latname],marker='o', 
+             markerfacecolor='w', color=[.25, .25, .25])
+
+    # Plot recent positions (in ndays) with colors
+    for ddo in range(len(divenum)):
+        lon1 = ds1[lonname][:,ddo]
+        lat1 = ds1[latname][:,ddo]
+        ax4.plot(lon1,lat1,marker='o',markerfacecolor=colors[ddo],color=[.25, .25, .25])
+    
+    # Add a colorbar for the time of each profile
+    timevec = ds1.time.values
+    dmin = timevec[~np.isnan(timevec)].min()
+    dmax = timevec[~np.isnan(timevec)].max()
+    norm = matplotlib.colors.Normalize(vmin=dmin, vmax=dmax)
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    
+    tvec = np.arange(dmin, dmax, timedelta(days=1))
+
     # Save
-#    plt.colorbar(colors)
     fig = plt.gcf()
 
     fname = titlestr+'_gridprof'
+    save_figure(fig, fname)
+    
+    
+def plot_gridscat(grid409,ndays,varlist,titlestr,
+                  bathylon,bathylat, bathy):
+    #------------------------------------------
+    # Variable names (could be passed as a dictionary)
+    #------------------------------------------
+    timename = 'time'
+    presname = 'pressure'
+    lonname = 'm_gps_lon'
+    latname = 'm_gps_lat'
+    
+
+
+    #------------------------------------------
+    # Get a mean time per profile - call it timevec
+    #------------------------------------------
+    time1 = grid409[timename].values
+    timenan = pd.isnull(time1)
+    time2 = time1.astype('float')
+    time2[timenan] = np.nan
+    time3 = np.nanmean(time2,axis=0)
+    timevec = time3.astype('datetime64[ns]')
+
+    grid409["timevec"] = ('divenum', timevec)
+
+    #------------------------------------------
+    # Create ds1 with ndays most recent profiles
+    #------------------------------------------
+    max_time = grid409["timevec"].max().values
+    dt1 = np.timedelta64(-ndays, 'D')
+    ds1 = grid409.where(grid409["timevec"]>=(max_time+dt1), drop=True).copy()
+    min_time = max_time+dt1
+    # Create a time string
+    timestr1 = pd.to_datetime(min_time).strftime('%b %d')# b for month MMM
+    timestr2 = pd.to_datetime(max_time).strftime('%b %d')
+    timestr3 = pd.to_datetime(max_time).strftime('%Y')
+    timestr = timestr1+' - '+timestr2+', '+timestr3
+
+    
+    # Maximum pressure for plot limits
+    maxp = ds1[presname].max()
+    pres1 = ds1[presname].values.copy()
+
+    # Expects the gridded data as input
+    divenum = ds1.divenum
+    mp = len(divenum)
+
+
+    #------------------------------------------
+    # Choose some colors
+    #------------------------------------------
+    cmap = plt.get_cmap('coolwarm')
+    indices = np.linspace(0, cmap.N, len(divenum))
+    my_colors = [cmap(int(i)) for i in indices]
+
+    # How many variables to plot
+    nn = len(varlist)
+
+    #------------------------------------------
+    # Set up a wide, multi-panel plot
+    #------------------------------------------
+    fig = plt.figure(constrained_layout=True, figsize=(3*(nn+1),4))
+    
+    ax_widths = [2.5, 2.5, 2.5, 3]
+    ax_height = [3.5]
+    gs = fig.add_gridspec(ncols=nn+1, nrows=1, width_ratios=ax_widths,
+                          height_ratios=ax_height)
+    
+    #    axes[0,nn] = gs.subplots(sharey='row')
+    counter = 0
+    for dataname in varlist:
+        # Pick the subplot axes
+        if counter==0:
+            ax1 = fig.add_subplot(gs[0, counter])
+            ax0 = ax1
+        else:
+            ax1 = fig.add_subplot(gs[0, counter], sharey=ax0)
+            plt.setp(ax1.get_yticklabels(), visible=False)
+            
+        presmat = np.tile(pres1, (len(divenum),1))
+        presmat = presmat.transpose()
+        print(presmat.shape)
+        sal1 = ds1[dataname]
+        print(sal1.shape)
+        
+        smap = ax1.scatter(sal1,presmat,s=5,c=ds1['time'],
+                           edgecolors='none', marker='o', cmap=cmap)
+        counter += 1
+        
+    cb = fig.colorbar(smap, orientation='vertical', use_gridspec=True,
+                     ticks = ds1['timevec'].astype(int))
+    
+    tvec = pd.to_datetime(ds1['timevec'].values)
+    cb.ax.set_yticklabels([tvec.strftime('%b %Y') for index in indices])
+    print(ds1)
+
+
+    fig = plt.gcf()
+
+    fname = titlestr+'_gridscat'
     save_figure(fig, fname)
