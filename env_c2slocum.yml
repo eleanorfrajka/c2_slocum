@@ -25,6 +25,8 @@ dependencies:
   - charset-normalizer=2.0.10=pyhd8ed1ab_0
   - click=8.0.3=py39h6e9494a_1
   - cloudpickle=2.0.0=pyhd8ed1ab_0
+  - cmocean=2.0=py_3
+  - colorspacious=1.1.2=pyh24bf2e0_0
   - cryptography=36.0.1=py39h209aa08_0
   - curl=7.78.0=h7bc2e8c_0
   - cycler=0.11.0=pyhd8ed1ab_0
@@ -155,4 +157,4 @@ dependencies:
   - zipp=3.7.0=pyhd8ed1ab_0
   - zlib=1.2.11=h4dc903c_4
   - zstd=1.4.9=h582d3a0_0
-prefix: /Users/loueme/anaconda3/envs/env_c2slocum
+prefix: /opt/anaconda3/envs/env_c2slocum
