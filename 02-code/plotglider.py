@@ -9,6 +9,7 @@ import matplotlib.dates as mdates
 from setdir import *
 from datetime import datetime, timedelta
 import cmocean
+import gsw
 
 #import seaborn as sns
 import xarray as xr
@@ -350,6 +351,9 @@ def plot_sxn(ds1, varlist):
             data1.plot.pcolormesh(ax=axes[counter], x='divenum', y='pressure',
                                ylim=[1000, 0], yincrease=False,
                                add_labels=True)
+    
+        if (varname=='derived_salinity') | (varname=='sci_water_temp'):
+            axes[counter].plot(ds1['divenum'].values,gsw.p_from_z(ds1['MLD'].values,np.nanmean(ds1['m_lat'].values)),'k')
     
         tstr = ds1.attrs['Serial number']+': '+ds1.attrs['Platform name']
         axes[0].set_title(tstr)
