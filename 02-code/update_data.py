@@ -49,7 +49,7 @@ var_physics = ['sci_water_pressure', 'sci_water_temp', 'sci_water_cond',
             'sci_oxy4_oxygen',
             'derived_salinity',
             'derived_potential_density', 'derived_potential_temperature',
-            'm_gps_lon', 'm_gps_lat',
+            'm_gps_lon', 'm_gps_lat','m_lon', 'm_lat',
            ]
 
 # Wetlabs on Unit_398: these parameters seem to work (bb2flsv9)
