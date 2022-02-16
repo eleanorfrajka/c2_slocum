@@ -427,7 +427,9 @@ for uname in unit_list:
         #--------------------------------------------------------------
         # Grid data onto a regular pressure grid (intervals given by dp)
         # Saves output to 01-data/03-processed/*_bin10m.nc
+        # Calculate MLD
         #--------------------------------------------------------------
         grid_ds = bin_dp(data_ds, data_ds.attrs['Serial number'], dp)
+        grid_ds = calc_MLD(grid_ds)
         grid_ds.to_netcdf(cat_proc_path(grid_ds.attrs['Serial number']+'_bin10m.nc'), mode='w')
         
