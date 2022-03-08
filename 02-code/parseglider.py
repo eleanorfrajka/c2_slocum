@@ -122,10 +122,10 @@ def bin_dp(u1, unitname, dp):
     pres = u1[presname].values
     prof_idx = u1[idxname].values
     
-    # Compute the bins, evenly spaced between the surface and 1000m
+    # Compute the bins, evenly spaced between the surface and 1020m
     # Since this is for glider data, it should be OK to hardcode the maximum pressure
     pmin = 0
-    pmax = 1000
+    pmax = 1020
     nbins = int(round((pmax-pmin)/dp))
     bins10m = np.linspace(pmin, pmax, nbins+1)
     pres10m = np.linspace(pmin+dp/2, pmax-dp/2, nbins)
