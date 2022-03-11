@@ -104,6 +104,15 @@ def geto2(o2phase,T,PSS,P,lon,lat,snstr):
 
 
 def calc_o2conc_cal(unit409):
+    '''Requires the 'optode SN' attribute in order to identify the correct
+    coefficients
+    sensor_sn = {
+        'unit_398': {"optode SN": "232"},
+        'unit_409': {"optode SN": "268"},
+    }
+    sensorsn1 = sensor_sn[uname]
+    data_ds = data_ds.assign_attrs(sensorsn1)
+    '''
     temp = unit409.sci_water_temp
     salinity = unit409.derived_salinity
     pres = unit409.pressure_dbar
@@ -116,7 +125,7 @@ def calc_o2conc_cal(unit409):
     N = len(unit409.time)
     longi = np.nanmean(unit409.m_gps_lon)*np.ones(N)
     lati = np.nanmean(unit409.m_gps_lat)*np.ones(N)
-    snstr = unit409.attrs["optode S/N"]
+    snstr = unit409.attrs["optode SN"]
     
     o2conc_cal = geto2(o2calp,temp,salinity,pres,
                        longi,lati,snstr)
