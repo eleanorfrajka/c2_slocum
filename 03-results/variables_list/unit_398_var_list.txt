@@ -24,6 +24,8 @@ m_battery
 m_battery_at_surface
 m_battery_inst
 m_battpos
+m_couldetect_reading
+m_couldetect_reading_at_surface
 m_coulomb_amphr
 m_coulomb_amphr_at_surface
 m_coulomb_amphr_total
@@ -42,6 +44,8 @@ m_heading
 m_iridium_signal_strength
 m_iridium_signal_strength_at_surface
 m_lat
+m_leaative_charge
+m_leaative_charge_at_surface
 m_leakdetect_voltage
 m_leakdetect_voltage_at_surface
 m_leakdetect_voltage_forward
@@ -57,6 +61,8 @@ m_pump_stress_remaining_cycles_at_surface
 m_roll
 m_science_on
 m_speed
+m_tot_num_disk_free
+m_tot_num_disk_free_at_surface
 m_tot_num_inflections
 m_tot_num_inflections_at_surface
 m_vacuum
@@ -67,6 +73,8 @@ m_water_vy
 m_water_vy_at_surface
 m_why_started
 m_why_started_at_surface
+m_y_relative_charge
+m_y_relative_charge_at_surface
 sci_ad2cp_file_state
 sci_badd_error
 sci_badd_finished
