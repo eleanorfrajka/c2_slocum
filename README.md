@@ -10,12 +10,16 @@ Objective of code:
     - Plot recent positions so waypoints can be picked (manually)
 
 
-How to update the glider dataset for TERIFIC
+## How to update the glider dataset for TERIFIC
+
+### Update tokens
 
 In a web browser
 - Update your token https://api.c2.noc.ac.uk/charon/tokens/issue 
 
 In 02-code/myToken.txt - input your up-to-date token
+
+### Run the basic downloading, processing, gridding and visualisation scripts.
 
 In the terminal
 1. conda activate env_c2slocum
