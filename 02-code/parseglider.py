@@ -1,5 +1,7 @@
 """
 Set of functions to parse data from C2 format into something that knows about profiles
+
+Should not calculate anything, only reformat or rearrange.
 """
 from scipy.io import loadmat # to load bathymetry
 import numpy as np
@@ -98,7 +100,43 @@ def dive_index(unit, presname, idxname):
 
     return unit, idx_d, idx_c
 
+#------------------------------------------------------------
+# THIS FIGURE SHOULD PROBABLY BE IN THE PARSEGLIDER.PY
+# It for checking whether or not the diveindex is correctly identified
+#------------------------------------------------------------
+def plot_dp(u1,i1,u2,i2,idx_d,idx_c):
+    """ Plot to check that profile_index from dive_index() are correct: 
+    Every dive (dp>0) should be blue and climb (dp<0) red. 
+    Parameters
+    ----------
+    u1, u2 : xarray.Dataset for each glider.
+    idx1, idx2 : individual glider index.
+    idx_d, idx_c: dive/climb indices, output from dive_index().
+    """
+    
+    ax = plt.subplots(nrows=2, ncols=1, figsize=(14,6))
+    ax1 = plt.subplot(2,1,1)
+    ax1.plot(u1['time'][idx_d[i1]],np.diff(u1['pressure_dbar'])[idx_d[i1]],'.b')
+    ax1.plot(u1['time'][idx_c[i1]],np.diff(u1['pressure_dbar'])[idx_c[i1]],'.r')
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter("%d-%b"))
+    ax1.set_ylim([-15,15]) ;
+    plt.grid() ; plt.ylabel(i1,fontweight='bold') ;
+    plt.title('dp (dbar)'+'\n'+'Check: every dive (dp>0) should be blue and climb (dp<0) red. ',fontweight='bold')
 
+    ax2 = plt.subplot(2,1,2)
+    ax2.plot(u2['time'][idx_d[i2]],np.diff(u2['pressure_dbar'])[idx_d[i2]],'.b')
+    ax2.plot(u2['time'][idx_c[i2]],np.diff(u2['pressure_dbar'])[idx_c[i2]],'.r')
+    ax2.set_ylim([-15,15]) ;
+    ax2.xaxis.set_major_formatter(mdates.DateFormatter("%d-%b"))
+    plt.grid() ; plt.ylabel(i2,fontweight='bold') ;
+
+    
+
+
+
+#------------------------------------------------------------
+# GRID GLIDER DATA
+#------------------------------------------------------------
 def bin_dp(u1, unitname, dp):
     """ Bin profile data from glider into coarse bins for quick plotting:
     default of dp=10m
