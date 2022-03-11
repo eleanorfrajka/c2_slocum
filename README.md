@@ -40,4 +40,38 @@ In the terminal
     Creates some status plots to see how the gliders are doing lately.
 
 
+## There are also various modules
+
+### calc_glider.py
+
+Only calculations MLD so far
+
+### calc_oxy.py
+
+Calculates the oxygen based on the serial number/calibration coefficients of sensors
+
+### glider_varlist.py
+
+Downloads a variable list from the API
+
+### niceplotting.py
+
+Little snippets of code to make nicer plots (not glider-specific)
+
+### plotglider_grid.py
+
+Plotting functions using the gridded data as the main input variables.
+
+
+### plotglider_tseries.py
+
+Plotting functions using the time series data as the main input variables
+
+### setdir.py
+
+Sets some paths
+
+### waypoint_picker.ipynb
+
+Probably out-of-date now, but was used to pick waypoints from the glider data.
 
