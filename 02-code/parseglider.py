@@ -122,7 +122,7 @@ def bin_dp(u1, unitname, dp):
     prof_idx = u1[idxname].values
     
     # Compute the bins, evenly spaced between the surface and 1000m
-    # Since this is for glider data, it should be OK to hardcode the maximum pressure
+    # ISSUE: Note the hardcoding of maximum pressure
     pmin = 0
     pmax = 1000
     nbins = int(round((pmax-pmin)/dp))
@@ -147,38 +147,40 @@ def bin_dp(u1, unitname, dp):
         # Subselect the xarray dataset for the dive or climb indices only
         u11 = u1.where(u1[idxname]==i, drop=True)
 
-        # Calculate the median of values within the bin
-        ddive = u11.groupby_bins(presname,bins10m, squeeze=False).mean()
-        
-        for varname in varlist:
-            # Assign dimensions
-            data1 = ddive[varname].values
+        # Make sure there are non-NaN values
+        if len(u11["time"])>1:
+            # Calculate the median of values within the bin
+            ddive = u11.groupby_bins(presname, bins10m, squeeze=False).mean()
 
-            # Reshape
-            data1 = data1[:, np.newaxis]
-        
-            myvars[varname] = (['pressure', 'divenum'], data1)
-        
-        mycoords = dict(
-            divenum = (["divenum"], [i],
-                      dict(long_name = "Profile index")),
-            pressure = (["pressure"], pres10m,
-                       dict(long_name = "Pressure",
-                           units = "dbar")),
-        )
-    
-        # Pass existing attributes.
-        # Might consider adding an attribute to describe the process used for gridding.
-        myattr = u1.attrs
-    
-        blank_new = xr.Dataset(data_vars=myvars, coords=mycoords, attrs=myattr)
+            for varname in varlist:
+                # Assign dimensions
+                data1 = ddive[varname].values
 
-        if counter==0:
-            blank_full = blank_new
-            counter += 1
-        else:
-            blank_full = blank_full.combine_first(blank_new)
-            counter += 1
+                # Reshape
+                data1 = data1[:, np.newaxis]
+
+                myvars[varname] = (['pressure', 'divenum'], data1)
+
+            mycoords = dict(
+                divenum = (["divenum"], [i],
+                          dict(long_name = "Profile index")),
+                pressure = (["pressure"], pres10m,
+                           dict(long_name = "Pressure",
+                               units = "dbar")),
+            )
+
+            # Pass existing attributes.
+            # Might consider adding an attribute to describe the process used for gridding.
+            myattr = u1.attrs
+
+            blank_new = xr.Dataset(data_vars=myvars, coords=mycoords, attrs=myattr)
+
+            if counter==0:
+                blank_full = blank_new
+                counter += 1
+            else:
+                blank_full = blank_full.combine_first(blank_new)
+                counter += 1
             
 
     # Convert the temporary time variable back into datetime64, then drop it.

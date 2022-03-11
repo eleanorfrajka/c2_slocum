@@ -319,6 +319,11 @@ def plot_sxn(ds1, varlist):
             levels = [350, 360, 370, 380, 390, 400, 410, 420]
             cmapstr = 'BrBG'
             cmapstr = cmocean.cm.oxy
+        elif varname=='o2conc_cal':
+            levels = [280, 290, 300, 310, 320, 330, 340]
+            cmapstr = 'BrBG'
+            cmapstr = cmocean.cm.oxy
+
         elif (varname=='sci_flbbcd_chlor_units') | (varname=='sci_bb2flsv9_chl_scaled'):
             levels = [0, .05, .1, .15, .2]
             cmapstr='YlGn'
@@ -359,6 +364,97 @@ def plot_sxn(ds1, varlist):
     
     # Save
     fname = ds1.attrs['Serial number']+'_sxn'
+    save_figure(fig, fname)
+    
+def plot_sxn_new(ds1, varlist, xcoord):
+    
+    # How many variables to plot
+    nn = len(varlist)
+
+
+    slevels = [32, 34, 34.6, 34.8, 34.85, 34.9, 35]
+    smapstr = 'viridis'
+    tlevels = [0, 2, 3, 3.5, 4, 4.5, 5, 5.5, 6, 7]
+
+        
+
+    # Make some simple section plots
+    fig,  axes = plt.subplots(nrows=nn, figsize=(10,3*nn))
+    
+    counter = 0
+    for varname in varlist:
+        data1 = ds1[varname]
+
+        if varname=='derived_salinity':
+            levels = slevels
+            cmapstr = smapstr
+        elif varname=='sci_water_temp':
+            levels=[0, 2, 3, 3.5, 4, 4.5, 5, 5.5, 6, 7]
+            cmapstr = 'RdYlBu_r'
+        elif varname=='sci_oxy4_oxygen':
+            levels = [350, 360, 370, 380, 390, 400, 410, 420]
+            cmapstr = 'BrBG'
+            cmapstr = cmocean.cm.oxy
+        elif varname=='o2conc_cal':
+            levels = [280, 290, 300, 310, 320, 330, 340]
+            cmapstr = 'BrBG'
+            cmapstr = cmocean.cm.oxy
+
+        elif (varname=='sci_flbbcd_chlor_units') | (varname=='sci_bb2flsv9_chl_scaled'):
+            levels = [0, .05, .1, .15, .2]
+            cmapstr='YlGn'
+        elif varname=='sci_flbbcd_cdom_units':
+            levels = [-.2, 0, .1, .2, .5]
+            levels = [x /1000 for x in levels]
+            cmapstr = 'YlOrRd'
+        elif varname=='sci_flbbcd_bb_units':
+            levels = [1, 1.5, 2, 2.5, 3 , 5]
+            levels = [x / 10000 for x in levels]
+            cmapstr ='Reds'
+        elif (varname=='sci_bb2flsv9_b532_scaled'):
+            levels = [0, .2, .5, .7, 1]
+            levels = [x / 1000 for x in levels]
+            cmapstr = 'Blues'
+
+        elif (varname=='sci_bb2flsv9_b700_scaled'):
+            levels = [0, .5, 1, 1.5, 2, 2.5, 3]
+            levels = [x/1000 for x in levels]
+            cmapstr='Reds'
+        else:
+            levels = []
+
+        if len(levels)>2: 
+            data1.plot.pcolormesh(ax=axes[counter], x=xcoord, y='pressure',
+                               ylim=[1000, 0], yincrease=False,
+                               add_labels=True, levels=levels, cmap=cmapstr)
+        else:
+            data1.plot.pcolormesh(ax=axes[counter], x=xcoord, y='pressure',
+                               ylim=[1000, 0], yincrease=False,
+                               add_labels=True)
+    
+        tstr = ds1.attrs['Serial number']+': '+ds1.attrs['Platform name']
+        axes[0].set_title(tstr)
+#        axes2 = axes[-1].twiny()
+#        axes2.set_xticks([.33, .66, .99])
+#        axes2.set_xlabel("TIME")
+        
+        # Trying to fix xaxis labels
+        if xcoord=='timevec':
+            axes[counter].xaxis.set_major_formatter(
+            mdates.ConciseDateFormatter(axes[-1].xaxis.get_major_locator()))
+
+        counter += 1
+
+
+    xticks1   = axes[-1].get_xticks()
+    #    plt.plot(grid398.divenum,tmp)
+    
+    plt.tight_layout()
+
+
+    
+    # Save
+    fname = ds1.attrs['Serial number']+'_sxn2'
     save_figure(fig, fname)
     
     
