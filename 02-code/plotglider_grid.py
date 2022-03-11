@@ -16,91 +16,15 @@ import gsw
 
 
 
-#------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------------------------------------
 # Plots a basic section against profile number.
 #
 # Varlist corresponds to the variable names to be plotted.
 # Note that as written, this hard-codes the colour limits on variables.  
 # Additionally functionality is needed to allow limits to be passed (for consistent limits between two figures)
 # or to allow them to be determined from the data.
-#------------------------------------------------------------------------------------------------------------------
-def plot_sxn(ds1, varlist):
-    # Input is ds1, a gridded glider dataset
-    
-    # How many variables to plot
-    nn = len(varlist)
-
-    # Salinity contours
-    slevels = [32, 34, 34.6, 34.8, 34.85, 34.9, 35]
-    smapstr = 'viridis'
-    tlevels = [0, 2, 3, 3.5, 4, 4.5, 5, 5.5, 6, 7]
-
-
-    # Make some simple section plots
-    fig,  axes = plt.subplots(nrows=nn, figsize=(10,3*nn))
-    
-    counter = 0
-    for varname in varlist:
-        data1 = ds1[varname]
-
-        if varname=='derived_salinity':
-            levels = slevels
-            cmapstr = smapstr
-        elif varname=='sci_water_temp':
-            levels=[0, 2, 3, 3.5, 4, 4.5, 5, 5.5, 6, 7]
-            cmapstr = 'RdYlBu_r'
-        elif varname=='sci_oxy4_oxygen':
-            levels = [350, 360, 370, 380, 390, 400, 410, 420]
-            cmapstr = 'BrBG'
-            cmapstr = cmocean.cm.oxy
-        elif varname=='o2conc_cal':
-            levels = [280, 290, 300, 310, 320, 330, 340]
-            cmapstr = 'BrBG'
-            cmapstr = cmocean.cm.oxy
-
-        elif (varname=='sci_flbbcd_chlor_units') | (varname=='sci_bb2flsv9_chl_scaled'):
-            levels = [0, .05, .1, .15, .2]
-            cmapstr='YlGn'
-        elif varname=='sci_flbbcd_cdom_units':
-            levels = [-.2, 0, .1, .2, .5]
-            levels = [x /1000 for x in levels]
-            cmapstr = 'YlOrRd'
-        elif varname=='sci_flbbcd_bb_units':
-            levels = [1, 1.5, 2, 2.5, 3 , 5]
-            levels = [x / 10000 for x in levels]
-            cmapstr ='Reds'
-        elif (varname=='sci_bb2flsv9_b532_scaled'):
-            levels = [0, .2, .5, .7, 1]
-            levels = [x / 1000 for x in levels]
-            cmapstr = 'Blues'
-
-        elif (varname=='sci_bb2flsv9_b700_scaled'):
-            levels = [0, .5, 1, 1.5, 2, 2.5, 3]
-            levels = [x/1000 for x in levels]
-            cmapstr='Reds'
-        else:
-            levels = []
-
-        if len(levels)>2: 
-            data1.plot.pcolormesh(ax=axes[counter], x='divenum', y='pressure',
-                               ylim=[1000, 0], yincrease=False,
-                               add_labels=True, levels=levels, cmap=cmapstr)
-        else:
-            data1.plot.pcolormesh(ax=axes[counter], x='divenum', y='pressure',
-                               ylim=[1000, 0], yincrease=False,
-                               add_labels=True)
-    
-        tstr = ds1.attrs['Serial number']+': '+ds1.attrs['Platform name']
-        axes[0].set_title(tstr)
-        counter += 1
-    
-    plt.tight_layout()
-    
-    # Save
-    fname = ds1.attrs['Serial number']+'_sxn'
-    save_figure(fig, fname)
-    
-def plot_sxn_new(ds1, varlist, xcoord):
+#--------------------------------------------------------------------------------------------------------------
+def plot_sxn(ds1, varlist, xcoord):
     
     # How many variables to plot
     nn = len(varlist)
@@ -167,14 +91,12 @@ def plot_sxn_new(ds1, varlist, xcoord):
                                add_labels=True)
     
         if (varname=='derived_salinity') | (varname=='sci_water_temp'):
-            axes[counter].plot(ds1['divenum'].values,gsw.p_from_z(ds1['MLD'].values,np.nanmean(ds1['m_lat'].values)),'k')
+            axes[counter].plot(ds1['divenum'].values,
+                               gsw.p_from_z(ds1['MLD'].values,np.nanmean(ds1['m_lat'].values)),'k')
     
         tstr = ds1.attrs['Serial number']+': '+ds1.attrs['Platform name']
         axes[0].set_title(tstr)
-#        axes2 = axes[-1].twiny()
-#        axes2.set_xticks([.33, .66, .99])
-#        axes2.set_xlabel("TIME")
-        
+
         # Trying to fix xaxis labels
         if xcoord=='timevec':
             axes[counter].xaxis.set_major_formatter(
@@ -182,13 +104,9 @@ def plot_sxn_new(ds1, varlist, xcoord):
 
         counter += 1
 
-
     xticks1   = axes[-1].get_xticks()
-    #    plt.plot(grid398.divenum,tmp)
-    
     plt.tight_layout()
-
-
+    # ISSUE: Need closer spacing between individual subplots
     
     # Save
     fname = ds1.attrs['Serial number']+'_sxn2'
@@ -250,9 +168,6 @@ def plot_waterfall(ds_grid1, varlist):
         # Pressure increases with depth
         ax1.invert_yaxis()
         ax1.set_title(dataname)
-#        ax1.ylabel('Pressure [dbar]')
-        
-
         counter += 1
         
     ax1.set_xlabel('Profile index')
