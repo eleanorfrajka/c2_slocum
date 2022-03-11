@@ -8,3 +8,4 @@ __pycache__
 myToken.txt
 env_miniconda.yml
 pkglist.txt
+parseglider-save.py

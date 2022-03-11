@@ -3,16 +3,19 @@ Set of functions for plotting glider data from time series data - either unit409
 
 Does not handle gridded data.
 """
-from scipy.io import loadmat # to load bathymetry
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import numpy as np
+import pandas as pd
 from setdir import *
 from datetime import datetime, timedelta
 import cmocean
+from niceplotting import *
 
 
+#------------------------------------------------------------
+# PLOT MAPS FROM GLIDER TSERIES
+#------------------------------------------------------------
 # Plot maps (needs two glider tracks)
 def map_tracks_pos(bathylon,bathylat,bathy,unit409,unit398):
 
@@ -34,8 +37,8 @@ def map_tracks_pos(bathylon,bathylat,bathy,unit409,unit398):
     ax1.set_xlabel('Longitude')
     ax1.set_ylabel("Latitude")
     plt.legend(['unit_398','unit_409'])
-#    sns.set(style='whitegrid')
 
+    # Set the aspect ratio to Mercator-like
     xsize = 5
     ysize = compute_ysize(xsize, lonlim, latlim)
 
@@ -44,6 +47,9 @@ def map_tracks_pos(bathylon,bathylat,bathy,unit409,unit398):
     #fig.savefig('output.png')
     save_figure(fig,'map_units_pos')
 
+#------------------------------------------------------------
+# PLOT MAPS FROM GLIDER POSITION
+#------------------------------------------------------------
 # Plot maps (needs two glider tracks)
 def map_tracks(bathylon, bathylat, bathy, unit409, unit398):
 
@@ -65,10 +71,8 @@ def map_tracks(bathylon, bathylat, bathy, unit409, unit398):
     ax1.set_xlabel("Longitude")
     ax1.set_ylabel("Latitude")
     plt.legend(['unit_398','unit_409'])
-#    sns.set(style='white')
 
-
-
+    # Set the aspect ratio to Mercator-like
     xsize = 5
     ysize = compute_ysize(xsize, lonlim, latlim)
 
@@ -77,7 +81,9 @@ def map_tracks(bathylon, bathylat, bathy, unit409, unit398):
     #fig.savefig('output.png')
     save_figure(fig,'map_unit409')
 
-# Plot full time series of pressure from a single glider
+#------------------------------------------------------------
+# PLOT FULL TIME SERIES OF GLIDER PRESSURE
+#------------------------------------------------------------
 def plot_pressure(unit409,titlestr):
     # Plot pressure against time
     xsize=10
@@ -109,7 +115,10 @@ def plot_pressure(unit409,titlestr):
 
 
 
-# Plots the most recent 'ndays' of data (pressure, temperature, salinity')
+#------------------------------------------------------------
+# PLOT RECENT 'ndays' of glider T, S and P time series
+#------------------------------------------------------------
+# Allows a quick check of whether data are being sent
 def plot_tseries(unit409,ndays,titlestr):
     axes = plt.subplots(nrows=3, ncols=1,figsize=(10,10))
 
@@ -153,6 +162,10 @@ def plot_tseries(unit409,ndays,titlestr):
     fname = titlestr+'_tseries'
     save_figure(fig, fname)
 
+#------------------------------------------------------------
+# PLOT RECENT 'ndays' of glider T, S and P profiles
+#------------------------------------------------------------
+# Quick and dirty check of stratification
 def plot_profiles(unit409,ndays,titlestr):
     # Variable names (could be passed as a dictionary)
     timename = 'time'
@@ -200,32 +213,4 @@ def plot_profiles(unit409,ndays,titlestr):
     fname = titlestr+'_profiles'
     save_figure(fig, fname)
 
-
-def plot_dp(u1,i1,u2,i2,idx_d,idx_c):
-    """ Plot to check that profile_index from dive_index() are correct: 
-    Every dive (dp>0) should be blue and climb (dp<0) red. 
-    Parameters
-    ----------
-    u1, u2 : xarray.Dataset for each glider.
-    idx1, idx2 : individual glider index.
-    idx_d, idx_c: dive/climb indices, output from dive_index().
-    """
-    
-    ax = plt.subplots(nrows=2, ncols=1, figsize=(14,6))
-    ax1 = plt.subplot(2,1,1)
-    ax1.plot(u1['time'][idx_d[i1]],np.diff(u1['pressure_dbar'])[idx_d[i1]],'.b')
-    ax1.plot(u1['time'][idx_c[i1]],np.diff(u1['pressure_dbar'])[idx_c[i1]],'.r')
-    ax1.xaxis.set_major_formatter(mdates.DateFormatter("%d-%b"))
-    ax1.set_ylim([-15,15]) ;
-    plt.grid() ; plt.ylabel(i1,fontweight='bold') ;
-    plt.title('dp (dbar)'+'\n'+'Check: every dive (dp>0) should be blue and climb (dp<0) red. ',fontweight='bold')
-
-    ax2 = plt.subplot(2,1,2)
-    ax2.plot(u2['time'][idx_d[i2]],np.diff(u2['pressure_dbar'])[idx_d[i2]],'.b')
-    ax2.plot(u2['time'][idx_c[i2]],np.diff(u2['pressure_dbar'])[idx_c[i2]],'.r')
-    ax2.set_ylim([-15,15]) ;
-    ax2.xaxis.set_major_formatter(mdates.DateFormatter("%d-%b"))
-    plt.grid() ; plt.ylabel(i2,fontweight='bold') ;
-
-    
 
