@@ -8,7 +8,29 @@ from setdir import *
 import xarray as xr
 import gsw
 
-def calc_MLD( grid, ref_p=15, drho=0.01, bot_val=1):
+
+def MLD_i(dens, depth, ref_z=-15, drho=0.01, bot_val=1):
+    # No MLD without shallowest point.
+    i = np.nanargmin(np.abs(depth - ref_z))
+    if np.isnan(dens[i]):
+        MLD = np.nan
+    # No MLD without enough data.
+    elif np.sum(~np.isnan(dens[:]))<2:
+        MLD = np.nan
+    else:
+        dens_diff = dens - dens[i]
+        dens_diff[depth > ref_z] = np.nan
+        depth_idx = np.nanargmin(abs(dens_diff - drho))
+        MLD = depth[depth_idx]
+        
+        # MLD=nan if deeper than ~1000m.
+        if bot_val==0:
+            if depth.shape[0]-1==depth_idx:
+                MLD = np.nan
+    return MLD
+
+
+def calc_MLD( grid, ref_z=-15, drho=0.01, bot_val=1):
     """ Calculate MLD of 2D dens/temp, with ref_depth=10m and drho=0.01 km/m^3 by default.
     Parameters
     ----------
@@ -29,25 +51,8 @@ def calc_MLD( grid, ref_p=15, drho=0.01, bot_val=1):
     grid['MLD'] = xr.DataArray(np.full(dens.shape[1],np.nan), dims=['divenum'])
     lat = np.nanmean(grid['m_lat'].values)
     depth = gsw.z_from_p(pres,lat)
-    ref_z = gsw.z_from_p(ref_p,lat)
     
     for k in range(dens.shape[1]):
-        # No MLD without shallowest point.
-        i = np.nanargmin(np.abs(depth - ref_z))
-        if np.isnan(dens[i,k]):
-            grid['MLD'][k] = np.nan
-        # No MLD without enough data.
-        elif np.sum(~np.isnan(dens[:,k]))<2:
-            grid['MLD'][k] = np.nan
-        else:
-            dens_diff = dens[:,k] - dens[i,k]
-            dens_diff[depth > ref_z] = np.nan
-            depth_idx = np.nanargmin(abs(dens_diff - drho))
-            grid['MLD'][k] = depth[depth_idx]
-        
-            # MLD=nan if deeper than ~1000m.
-            if bot_val==0:
-                if depth.shape[0]-1==depth_idx:
-                    grid['MLD'][k] = np.nan
-            
+        grid['MLD'][k] = MLD_i(dens[:,k], depth, ref_z, drho, bot_val)
+
     return grid
