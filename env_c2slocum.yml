@@ -3,8 +3,13 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - aiohttp=3.8.1=py39h89e85a6_0
+  - aiosignal=1.2.0=pyhd8ed1ab_0
   - appnope=0.1.2=py39h6e9494a_2
+  - argopy=0.1.10=pyhd8ed1ab_0
   - asttokens=2.0.5=pyhd8ed1ab_0
+  - async-timeout=4.0.2=pyhd8ed1ab_0
+  - attrs=21.4.0=pyhd8ed1ab_0
   - backcall=0.2.0=pyh9f0ad1d_0
   - backports=1.0=py_2
   - backports.functools_lru_cache=1.6.4=pyhd8ed1ab_0
@@ -38,9 +43,11 @@ dependencies:
   - decorator=5.1.1=pyhd8ed1ab_0
   - distributed=2022.1.0=py39h6e9494a_0
   - entrypoints=0.3=pyhd8ed1ab_1003
+  - erddapy=1.2.1=pyhd8ed1ab_0
   - executing=0.8.2=pyhd8ed1ab_0
   - fonttools=4.28.5=py39h89e85a6_0
   - freetype=2.10.4=h4cff582_1
+  - frozenlist=1.3.0=py39h89e85a6_0
   - fsspec=2022.1.0=pyhd8ed1ab_0
   - gsw=3.4.0=py39hc89836e_2
   - h5netcdf=0.13.0=pyhd8ed1ab_0
@@ -56,6 +63,7 @@ dependencies:
   - ipython_genutils=0.2.0=pyhd3eb1b0_1
   - jedi=0.18.1=py39h6e9494a_0
   - jinja2=3.0.3=pyhd8ed1ab_0
+  - joblib=1.1.0=pyhd8ed1ab_0
   - jpeg=9d=hbcb3906_0
   - jupyter_client=7.1.1=pyhd8ed1ab_0
   - jupyter_core=4.9.1=py39h6e9494a_1
@@ -92,6 +100,7 @@ dependencies:
   - matplotlib-base=3.5.1=py39hb07454d_0
   - matplotlib-inline=0.1.3=pyhd8ed1ab_0
   - msgpack-python=1.0.3=py39hf018cea_0
+  - multidict=6.0.2=py39h89e85a6_0
   - munkres=1.1.4=pyh9f0ad1d_0
   - mypy_extensions=0.4.3=py39h6e9494a_4
   - ncurses=6.3=hca72f7f_2
@@ -128,6 +137,7 @@ dependencies:
   - pyzmq=22.3.0=py39h7fec2f1_1
   - readline=8.1.2=hca72f7f_1
   - requests=2.27.1=pyhd8ed1ab_0
+  - scikit-learn=1.0.2=py39hd4eea88_0
   - scipy=1.7.3=py39h056f1c0_0
   - seaborn=0.11.2=hd8ed1ab_0
   - seaborn-base=0.11.2=pyhd8ed1ab_0
@@ -138,12 +148,14 @@ dependencies:
   - stack_data=0.1.4=pyhd8ed1ab_0
   - statsmodels=0.13.1=py39hc89836e_0
   - tblib=1.7.0=pyhd8ed1ab_0
+  - threadpoolctl=3.1.0=pyh8a188c0_0
   - tk=8.6.11=h7bc2e8c_0
   - tomli=1.2.2=pyhd8ed1ab_0
   - toolz=0.11.2=pyhd8ed1ab_0
   - tornado=6.1=py39h89e85a6_2
   - traitlets=5.1.1=pyhd8ed1ab_0
   - typed-ast=1.5.1=py39h89e85a6_0
+  - typing-extensions=4.0.1=hd8ed1ab_0
   - typing_extensions=4.0.1=pyha770c72_0
   - tzdata=2021e=hda174b7_0
   - urllib3=1.26.8=pyhd8ed1ab_1
@@ -152,9 +164,10 @@ dependencies:
   - xarray=0.20.2=pyhd8ed1ab_0
   - xz=5.2.5=h1de35cc_0
   - yaml=0.2.5=h0d85af4_2
+  - yarl=1.7.2=py39h89e85a6_1
   - zeromq=4.3.4=he49afe7_1
   - zict=2.0.0=py_0
   - zipp=3.7.0=pyhd8ed1ab_0
   - zlib=1.2.11=h4dc903c_4
   - zstd=1.4.9=h582d3a0_0
-prefix: /opt/anaconda3/envs/env_c2slocum
+prefix: /Users/loueme/anaconda3/envs/env_c2slocum
