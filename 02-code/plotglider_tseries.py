@@ -214,3 +214,66 @@ def plot_profiles(unit409,ndays,titlestr):
     save_figure(fig, fname)
 
 
+
+    
+def map_tracks_mld(bathylon,bathylat,bathy,grid409,grid398,ag):
+
+    # Choose axis limits
+    latlim = [54, 64]
+    lonlim = [-60, -45]
+
+    axes = plt.subplots(nrows=1, ncols=2)
+    ax1 = plt.subplot(1,2,1)
+    ax1.contour(bathylon, bathylat, bathy, levels=[-4000,-3000,-2000,-1000,0], colors='k', linestyles='solid')
+    ax1.set_ylim(latlim)
+    ax1.set_xlim(lonlim)
+    fig = plt.gcf()
+
+    lonname = 'longitude'
+    latname = 'latitude'
+    sc=ax1.scatter(grid409.m_lon[0,:].values,grid409.m_lat[0,:].values,c=grid409.MLD.values,s=60,vmin=-800,vmax=0,cmap='viridis_r')
+    sc=ax1.scatter(grid398.m_lon[0,:].values,grid398.m_lat[0,:].values,c=grid398.MLD.values,s=60,vmin=-800,vmax=0,cmap='viridis_r')
+    sc=ax1.scatter(ag['LONGITUDE'].values,ag['LATITUDE'].values,c=ag['MLD'].values,s=60,vmin=-800,vmax=0,cmap='viridis_r')
+    ax1.set_title('Argo last 2 months')
+    ax1.set_xlabel('Longitude')
+    ax1.set_ylabel("Latitude")
+
+    # Set the aspect ratio to Mercator-like
+    xsize = 7
+    ysize = compute_ysize(xsize, lonlim, latlim)
+    fig.set_size_inches(2*xsize, ysize)
+    
+    #------------------------------------------
+    # Create ds1 with ndays most recent profiles
+    #------------------------------------------
+    max_time = grid409["timevec"].max().values
+    dt1 = np.timedelta64(-15, 'D')
+    ds1 = grid409.where(grid409["timevec"]>=(max_time+dt1), drop=True).copy()
+    ds2 = grid398.where(grid398["timevec"]>=(max_time+dt1), drop=True).copy()
+    min_time = max_time+dt1
+    # Create a time string
+    timestr1 = pd.to_datetime(min_time).strftime('%b %d')# b for month MMM
+    timestr2 = pd.to_datetime(max_time).strftime('%b %d')
+    timestr3 = pd.to_datetime(max_time).strftime('%Y')
+    timestr = timestr1+' - '+timestr2+', '+timestr3
+    last_days_ag=np.where(pd.to_datetime(ag['TIME'].values)>pd.to_datetime((max_time+dt1)))[0]
+    
+    ax2 = plt.subplot(1,2,2)
+    ax2.contour(bathylon, bathylat, bathy, levels=[-4000,-3000,-2000,-1000,0], colors='k', linestyles='solid')
+    ax2.set_ylim(latlim)
+    ax2.set_xlim(lonlim)
+    ax2.set_title(timestr)
+    ax2.set_xlabel('Longitude')
+    ax2.set_ylabel("Latitude")
+    
+    sc=ax2.scatter(ds1.m_lon[0,:].values,ds1.m_lat[0,:].values,c=ds1.MLD.values,s=60,vmin=-800,vmax=0,cmap='viridis_r')
+    sc=ax2.scatter(ds2.m_lon[0,:].values,ds2.m_lat[0,:].values,c=ds2.MLD.values,s=60,vmin=-800,vmax=0,cmap='viridis_r')
+    sc=ax2.scatter(ag['LONGITUDE'].values[last_days_ag],ag['LATITUDE'].values[last_days_ag],c=ag['MLD'].values[last_days_ag],s=60,vmin=-800,vmax=0,cmap='viridis_r')
+    
+    plt.tight_layout()
+    pltci=fig.colorbar(sc, orientation="horizontal", ax=[ax1,ax2], fraction=.03, pad=0.1, shrink=.8)
+    pltci.ax.set_xlabel(r'MLD [m]',fontsize=14,fontweight='bold')
+    
+    save_figure(fig,'map_tracks_mld')
+    
+    

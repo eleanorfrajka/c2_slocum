@@ -169,3 +169,24 @@ plot_gridprof(grid398,ndays,varlist2,'grid398', bathylon,bathylat, bathy)
 #========================================================================
 
 
+
+#----------------------------------------------------------------------
+# Display Argo MLD
+#----------------------------------------------------------------------
+# Load Argo data
+# Extract a list with the names of existing raw data files
+fname = 'Argo_*.nc'
+existing_files = glob.glob(cat_proc_path(fname))
+
+# Check whether there are any
+if len(existing_files) > 0:
+    # Extract the end date from the filename
+    existing_files = sorted(existing_files)
+    latest_file = existing_files[-1]
+    # Open the dataset
+    ag = xr.open_dataset(latest_file)
+    
+map_tracks_mld(bathylon,bathylat,bathy,grid409,grid398,ag)
+#========================================================================
+
+
