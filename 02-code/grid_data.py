@@ -180,8 +180,8 @@ ag.argo.teos10(['SA', 'CT', 'PV'])
 # DATA_MODE ( R for real time data, D for delayed mode data, A for real time adjusted data )
 DATA_MODE = ['Real time','Delayed mode','Adjusted']
 print( str(ag.N_PROF.values.shape[0]) + ' profiles and ' + str(np.unique(ag.PLATFORM_NUMBER.values).shape[0]) + ' Argo floats found in the last 2 months')
-for i in DATA_MODE:
-    print('Profiles ' + i + ':' + str( (np.where( ag.DATA_MODE.values == i )[0]).shape[0]) )
+for i in range(len(DATA_MODE)):
+    print('Profiles ' + DATA_MODE[i] + ':' + str( (np.where( ag.DATA_MODE.values == DATA_MODE[i][0] )[0]).shape[0]) )
 
 #-------------------------------------------------
 # Calculate MLD
