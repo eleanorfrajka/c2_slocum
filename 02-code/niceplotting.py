@@ -77,6 +77,13 @@ def deg2dec(deg1, mindec):
 # Middle_percent - to remove outliers from plot limits
 #--------------------------------------------------------------
 def middle_percent(data1, perc_keep):
+    
+    N2 = data1.shape
+    if len(N2)>1:
+        RR, CC = data1.shape
+        Nlong = RR*CC
+        data1 = np.reshape(data1.values, Nlong)
+
     # Works on a vector/dataarray (not a matrix, yet)
     sal_sort = np.sort(data1)
     sal_sort_nonnan = sal_sort[~np.isnan(sal_sort)]
@@ -87,10 +94,22 @@ def middle_percent(data1, perc_keep):
     # Index cutoff
     low_index_limit = round(alpha1*NN)
     high_index_limit = round((1-alpha1)*NN)
+    if high_index_limit>NN:
+        high_index_limit = NN
+
     # Value limits
     low_limit = sal_sort_nonnan[low_index_limit]
     high_limit = sal_sort_nonnan[high_index_limit]
-    
+
     return low_limit, high_limit
-
-
+        
+#--------------------------------------------------------------
+# expandx - slightly widen the limits to improve visualisation
+#--------------------------------------------------------------
+def expandx(lb, ub):
+    dy = ub-lb
+    ub = ub + .05*dy
+    lb = lb - .05*dy
+    
+    return lb, ub
+    

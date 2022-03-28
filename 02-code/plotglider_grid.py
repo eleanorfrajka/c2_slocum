@@ -13,6 +13,8 @@ from setdir import *
 from datetime import datetime, timedelta
 import cmocean
 import gsw
+from niceplotting import *
+
 
 
 
@@ -264,6 +266,12 @@ def plot_gridprof(grid409,ndays,varlist,titlestr,
         for ddo in range(len(divenum)):
             sal1 = ds1[dataname][:,ddo]
             ax1.plot(sal1, pres1, color=colors[ddo])
+
+        # Try setting axis limits
+        lb,ub = middle_percent(ds1[dataname], 99)
+        lb,ub = expandx(lb, ub) # Make the limits slightly wider
+#        print('lb is '+str(lb)+', ub is '+str(ub))
+        ax1.set_xlim([lb, ub])
 
         # Pressure increases with depth
         ax1.invert_yaxis()
