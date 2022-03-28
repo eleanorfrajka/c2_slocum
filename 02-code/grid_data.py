@@ -8,6 +8,7 @@ To run it:
 1. Works locally on the processed netcdf glider time series *o2.nc
 2. Grid glider data
 3. Calculate MLD
+4. Load Argo data
 
 Runs offline, using the netcdf files created in process_glider_tseries.py
 """
@@ -153,5 +154,51 @@ for uname in unit_list:
         
         # EFW: I think closing these helps with file management & permission 
         # denied problems? 
-        grid_ds.close()     
+        grid_ds.close()    
+        
+        
+#----------------------------------------------------------------------
+# Load and save Argo data using argopy
+# Calculate Argo MLD
+#----------------------------------------------------------------------
 
+# Instantiate default argopy data fetcher
+from argopy import DataFetcher as ArgoDataFetcher
+argo_loader = ArgoDataFetcher()
+
+date_now = datetime.datetime.now()
+date_1mth = date_now+datetime.timedelta(days=-2*30)
+# Request data for a specific space/time domain
+ag_points = argo_loader.region([-66,-44,45,68,0,1000,
+                                date_1mth.strftime("%Y-%m-%d"),
+                                date_now.strftime("%Y-%m-%d")]).to_xarray() # 45-68N - 66-44W
+# Save by profiles
+ag = ag_points.argo.point2profile()
+# TEOS-10 variables
+ag.argo.teos10(['SA', 'CT', 'PV'])
+
+# DATA_MODE ( R for real time data, D for delayed mode data, A for real time adjusted data )
+DATA_MODE = ['Real time','Delayed mode','Adjusted']
+print( str(ag.N_PROF.values.shape[0]) + ' profiles and ' + str(np.unique(ag.PLATFORM_NUMBER.values).shape[0]) + ' Argo floats found in the last 2 months')
+for i in range(len(DATA_MODE)):
+    print('Profiles ' + DATA_MODE[i] + ':' + str( (np.where( ag.DATA_MODE.values == DATA_MODE[i][0] )[0]).shape[0]) )
+
+#-------------------------------------------------
+# Calculate MLD
+#-------------------------------------------------
+ag['MLD']=xr.DataArray( np.full(ag.N_PROF.shape[0],np.nan), coords={"N_PROF": ag.N_PROF})
+for i in range(ag.N_PROF.shape[0]):
+    if np.nanmax(ag.PRES.values[i,:])>10:
+        ag['MLD'][i]=MLD_i( gsw.sigma0(ag.SA.values[i,:],ag.CT.values[i,:]), gsw.z_from_p(ag.PRES.values[i,:],ag.LATITUDE.values[i]))
+
+
+#-------------------------------------------------
+# Save Argo in nc file
+#-------------------------------------------------
+outfile = 'Argo_'+ date_now.strftime("%Y-%m-%d") +'.nc'
+if Path(cat_proc_path(outfile)).is_file()==0:
+    print('Saving Argo file to '+cat_proc_path(outfile))
+    ag.to_netcdf(cat_proc_path(outfile), mode='w')
+    ag.close()    
+    
+    

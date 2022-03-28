@@ -91,7 +91,7 @@ def plot_sxn(ds1, varlist, xcoord):
                                add_labels=True)
     
         if (varname=='derived_salinity') | (varname=='sci_water_temp'):
-            axes[counter].plot(ds1['divenum'].values,
+            axes[counter].plot(ds1[xcoord].values,
                                gsw.p_from_z(ds1['MLD'].values,np.nanmean(ds1['m_lat'].values)),'k')
     
         tstr = ds1.attrs['Serial number']+': '+ds1.attrs['Platform name']
