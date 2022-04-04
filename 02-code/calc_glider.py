@@ -15,13 +15,14 @@ def MLD_i(dens, depth, ref_z=-15, drho=0.01, bot_val=1):
     if np.isnan(dens[i]):
         MLD = np.nan
     # No MLD without enough data.
-    elif np.sum(~np.isnan(dens[:]))<2:
-        MLD = np.nan
     else:
         dens_diff = dens - dens[i]
         dens_diff[depth > ref_z] = np.nan
-        depth_idx = np.nanargmin(abs(dens_diff - drho))
-        MLD = depth[depth_idx]
+        if np.sum(np.isnan(dens_diff))==dens_diff.shape[0]:
+            MLD = np.nan
+        else:
+            depth_idx = np.nanargmin(abs(dens_diff - drho))
+            MLD = depth[depth_idx]
         
         # MLD=nan if deeper than ~1000m.
         if bot_val==0:
