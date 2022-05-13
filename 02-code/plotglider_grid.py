@@ -115,6 +115,104 @@ def plot_sxn(ds1, varlist, xcoord):
     save_figure(fig, fname)
     
     
+# Adapt for Brian Ward to only show the last 4 weeks/200 m
+def plot_sxn_BW(ds0, varlist, xcoord):
+    import matplotlib
+    matplotlib.rcParams.update({'font.size': 12}) # plot font size
+    
+    from matplotlib.dates import DateFormatter
+    
+    # How many variables to plot
+    nn = len(varlist)
+    smapstr = 'viridis'
+        
+    max_time = ds0["timevec"].max().values
+    dt1 = np.timedelta64(-1*30, 'D')
+    ds1 = ds0.where(ds0["timevec"]>=(max_time+dt1), drop=True).copy()
+
+    # Make some simple section plots
+    fig,  axes = plt.subplots(nrows=nn, figsize=(10,2.3*nn))
+    
+    counter = 0
+    for varname in varlist:
+        data1 = ds1[varname]
+        
+        # Remove all profiles with nans only to plot only available data for Wetlabs
+        data2 = data1.where(data1['divenum'][np.sum(np.isnan(data1),0)!=100])
+        data2 = data1.where(data1['divenum'][np.sum(np.isnan(data1),0)<97])
+
+        if varname=='derived_salinity':
+            levels = np.arange(34.2,34.95,0.05)
+            cmapstr = smapstr
+        elif varname=='sci_water_temp':
+            levels = np.arange(2.5,4.5,0.1)
+            cmapstr = 'RdYlBu_r'
+        elif varname=='sci_oxy4_oxygen':
+            levels = [350, 360, 370, 380, 390, 400, 410, 420]
+            cmapstr = 'BrBG'
+            cmapstr = cmocean.cm.oxy
+        elif varname=='o2conc_cal':
+            levels = np.arange(280,335,5)
+            cmapstr = 'BrBG'
+            cmapstr = cmocean.cm.oxy
+
+        elif (varname=='sci_flbbcd_chlor_units') | (varname=='sci_bb2flsv9_chl_scaled'):
+            levels = np.arange(0,1.1,0.1)
+            cmapstr='YlGn'
+        elif varname=='sci_flbbcd_cdom_units':
+            levels = np.arange(-0.5,-0.1,0.01)
+            cmapstr = 'YlOrRd_r'
+        elif varname=='sci_flbbcd_bb_units':
+            levels = np.arange(0.0001,0.0005,0.00002)
+            cmapstr ='Reds'
+        elif (varname=='sci_bb2flsv9_b532_scaled'):
+            levels = [x / 1000 for x in levels]
+            levels = np.arange(0.0001,0.0005,0.00002)
+            cmapstr = 'Blues'
+
+        elif (varname=='sci_bb2flsv9_b700_scaled'):
+            levels = [x/1000 for x in levels]
+            levels = np.arange(0.0001,0.0005,0.00002)
+            cmapstr='Reds'
+        else:
+            levels = []
+
+        if len(levels)>2: 
+            data2.plot.pcolormesh(ax=axes[counter], x=xcoord, y='pressure',
+                               ylim=[200, 0], xlim=[ds1.timevec.values[0],ds1.timevec.values[-1]],yincrease=False,
+                               add_labels=True, levels=levels, cmap=cmapstr)
+            axes[counter].set_xlabel('')
+            axes[counter].xaxis.set_tick_params(rotation=0)
+        else:
+            data2.plot.pcolormesh(ax=axes[counter], x=xcoord, y='pressure',
+                               ylim=[200, 0], yincrease=False,
+                               add_labels=True)
+    
+        if (varname=='derived_salinity') | (varname=='sci_water_temp'):
+            axes[counter].plot(ds1[xcoord].values,
+                               gsw.p_from_z(ds1['MLD'].values,np.nanmean(ds1['m_lat'].values)),'k')
+    
+        tstr = ds1.attrs['Serial number']+': '+ds1.attrs['Platform name']
+        axes[0].set_title(tstr,fontweight='bold')
+
+        # Trying to fix xaxis labels
+        if xcoord=='timevec':
+            date_form = DateFormatter("%d-%b")
+            axes[counter].xaxis.set_major_formatter(date_form)
+            axes[counter].xaxis.set_major_locator(mdates.DayLocator(interval=5))
+
+        counter += 1
+
+    xticks1   = axes[-1].get_xticks()
+    plt.tight_layout()
+    # ISSUE: Need closer spacing between individual subplots
+    
+    # Save
+    fname = ds1.attrs['Serial number']+'_sxn2_BWard'
+    save_figure(fig, fname)
+    
+    
+    
 def plot_waterfall(ds_grid1, varlist):
     # Expects the gridded data as input
     divenum = ds_grid1.divenum
