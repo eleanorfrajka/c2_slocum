@@ -22,6 +22,8 @@ def map_tracks_pos(bathylon,bathylat,bathy,unit409,unit398):
     # Choose axis limits
     latlim = [52, 67]
     lonlim = [-66, -45]
+    latlim = [55, 58]
+    lonlim = [-55, -50]
 
     axes = plt.subplots(nrows=1, ncols=1)
     ax1 = plt.subplot(1,1,1)
@@ -32,8 +34,14 @@ def map_tracks_pos(bathylon,bathylat,bathy,unit409,unit398):
 
     lonname = 'longitude'
     latname = 'latitude'
-    ax1.plot(unit398[lonname], unit398[latname], color='r')
-    ax1.plot(unit409[lonname], unit409[latname], color='b')
+#     ax1.plot(unit398[lonname], unit398[latname], color='r')
+#     ax1.plot(unit409[lonname], unit409[latname], color='b')
+    ax1.plot(unit398[lonname], unit398[latname], '.r')
+    ax1.plot(unit409[lonname], unit409[latname], '.b')
+    ax1.scatter(unit398[lonname][0], unit398[latname][0], s=100,c='g',edgecolors='g',marker='v',linewidths=3)
+#     ax1.plot(unit409[lonname][0], unit409[latname][0], 'xb',linewidth=3)
+    ax1.scatter(unit409[lonname][0], unit409[latname][0], s=100,c='g',edgecolors='g',marker='v',linewidths=3)
+    
     ax1.set_xlabel('Longitude')
     ax1.set_ylabel("Latitude")
     plt.legend(['unit_398','unit_409'])
@@ -43,7 +51,8 @@ def map_tracks_pos(bathylon,bathylat,bathy,unit409,unit398):
     ysize = compute_ysize(xsize, lonlim, latlim)
 
     fig.set_size_inches(xsize, ysize)
-
+    plt.grid()
+    
     #fig.savefig('output.png')
     save_figure(fig,'map_units_pos')
 
